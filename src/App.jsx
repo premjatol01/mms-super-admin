@@ -3,6 +3,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 import PackagesPage from "./pages/packages/PackagesPage";
+import SubscriptionsPage from "./pages/subscriptions/SubscriptionsPage";
 import LeadsPage from "./pages/leads/LeadsPage";
 
 export default function App() {
@@ -16,7 +17,7 @@ export default function App() {
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/new" element={<PlaceholderPage title="Create New Package" />} />
           <Route path="/features" element={<PlaceholderPage title="Feature Availability Management" />} />
-          <Route path="/subscriptions" element={<PlaceholderPage title="Subscription Management" />} />
+          <Route path="/subscriptions" element={<SubscriptionsPage />} />
           <Route path="/qr-config" element={<PlaceholderPage title="QR Code Configuration" />} />
           <Route path="/cms" element={<PlaceholderPage title="CMS" />} />
           <Route path="/platform-control" element={<PlaceholderPage title="Restaurant Website — Platform Control" />} />
