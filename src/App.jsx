@@ -5,6 +5,9 @@ import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 import PackagesPage from "./pages/packages/PackagesPage";
 import SubscriptionsPage from "./pages/subscriptions/SubscriptionsPage";
 import LeadsPage from "./pages/leads/LeadsPage";
+import QrConfigPage from "./pages/qr-config/QrConfigPage";
+import FeaturesPage from "./pages/features/FeaturesPage";
+import OffersPage from "./pages/offers/OffersPage";
 
 export default function App() {
   return (
@@ -16,12 +19,12 @@ export default function App() {
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/new" element={<PlaceholderPage title="Create New Package" />} />
-          <Route path="/features" element={<PlaceholderPage title="Feature Availability Management" />} />
+          <Route path="/features" element={<FeaturesPage title="Feature Availability Management" />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
-          <Route path="/qr-config" element={<PlaceholderPage title="QR Code Configuration" />} />
+          <Route path="/qr-config" element={<QrConfigPage title="QR Code Configuration" />} />
           <Route path="/cms" element={<PlaceholderPage title="CMS" />} />
           <Route path="/platform-control" element={<PlaceholderPage title="Restaurant Website — Platform Control" />} />
-          <Route path="/offers" element={<PlaceholderPage title="Offer — Subscription Control" />} />
+          <Route path="/offers" element={<OffersPage title="Offer — Subscription Control" />} />
           <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
           <Route path="/profile" element={<PlaceholderPage title="Profile" />} />
         </Route>
