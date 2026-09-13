@@ -9,6 +9,7 @@ import QrConfigPage from "./pages/qr-config/QrConfigPage";
 import FeaturesPage from "./pages/features/FeaturesPage";
 import OffersPage from "./pages/offers/OffersPage";
 import PlatformControlPage from "./pages/platform-control/PlatformControlPage";
+import CmsPage from "./pages/cms/CmsPage";
 
 export default function App() {
   return (
@@ -23,7 +24,7 @@ export default function App() {
           <Route path="/features" element={<FeaturesPage title="Feature Availability Management" />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
           <Route path="/qr-config" element={<QrConfigPage title="QR Code Configuration" />} />
-          <Route path="/cms" element={<PlaceholderPage title="CMS" />} />
+          <Route path="/cms" element={<CmsPage title="CMS" />} />
           <Route path="/platform-control" element={<PlatformControlPage title="Restaurant Website — Platform Control" />} />
           <Route path="/offers" element={<OffersPage title="Offer — Subscription Control" />} />
           <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
