@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 
 export default function App() {
   return (
@@ -8,7 +9,7 @@ export default function App() {
       <Routes>
         <Route element={<AdminLayout />}>
           <Route index element={<PlaceholderPage title="Dashboard" />} />
-          <Route path="/restaurants" element={<PlaceholderPage title="Restaurant / Admin Management" />} />
+          <Route path="/restaurants" element={<RestaurantsPage />} />
           <Route path="/leads" element={<PlaceholderPage title="Lead Management" />} />
           <Route path="/packages" element={<PlaceholderPage title="Subscription Package Management" />} />
           <Route path="/features" element={<PlaceholderPage title="Feature Availability Management" />} />
