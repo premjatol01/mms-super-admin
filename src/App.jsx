@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
+import PackagesPage from "./pages/packages/PackagesPage";
+import LeadsPage from "./pages/leads/LeadsPage";
 
 export default function App() {
   return (
@@ -10,8 +12,9 @@ export default function App() {
         <Route element={<AdminLayout />}>
           <Route index element={<PlaceholderPage title="Dashboard" />} />
           <Route path="/restaurants" element={<RestaurantsPage />} />
-          <Route path="/leads" element={<PlaceholderPage title="Lead Management" />} />
-          <Route path="/packages" element={<PlaceholderPage title="Subscription Package Management" />} />
+          <Route path="/leads" element={<LeadsPage />} />
+          <Route path="/packages" element={<PackagesPage />} />
+          <Route path="/packages/new" element={<PlaceholderPage title="Create New Package" />} />
           <Route path="/features" element={<PlaceholderPage title="Feature Availability Management" />} />
           <Route path="/subscriptions" element={<PlaceholderPage title="Subscription Management" />} />
           <Route path="/qr-config" element={<PlaceholderPage title="QR Code Configuration" />} />

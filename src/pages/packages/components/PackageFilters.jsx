@@ -2,13 +2,12 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
-import Input from "../../../components/ui/Input";
 
-export default function SearchFilters({ 
+export default function PackageFilters({ 
   filters, 
   onFilterChange, 
   onResetFilters, 
-  restaurantCount 
+  packageCount 
 }) {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const drawerRef = useRef(null);
@@ -40,7 +39,7 @@ export default function SearchFilters({
             type="text"
             value={filters.search}
             onChange={(e) => onFilterChange("search", e.target.value)}
-            placeholder="Search by name, admin, email, or phone..."
+            placeholder="Search packages..."
             className="w-full pl-9 pr-8 py-2.5 rounded-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-light)]"
           />
           {filters.search && (
@@ -104,57 +103,17 @@ export default function SearchFilters({
                 />
                 
                 <Select 
-                  label="Subscription Status" 
-                  value={filters.subscriptionStatus} 
-                  onChange={(v) => onFilterChange("subscriptionStatus", v)} 
+                  label="Duration" 
+                  value={filters.duration} 
+                  onChange={(v) => onFilterChange("duration", v)} 
                   options={[
-                    { value: "active", label: "Active" },
-                    { value: "expired", label: "Expired" },
-                    { value: "pending", label: "Pending" },
+                    { value: "30_days", label: "30 Days" },
+                    { value: "3_months", label: "3 Months" },
+                    { value: "6_months", label: "6 Months" },
+                    { value: "1_year", label: "1 Year" },
                   ]} 
-                  placeholder="All" 
+                  placeholder="All Durations" 
                 />
-                
-                <Select 
-                  label="Package" 
-                  value={filters.package} 
-                  onChange={(v) => onFilterChange("package", v)} 
-                  options={[
-                    { value: "basic", label: "Basic" },
-                    { value: "standard", label: "Standard" },
-                    { value: "premium", label: "Premium" },
-                  ]} 
-                  placeholder="All Packages" 
-                />
-                
-                <Select 
-                  label="City" 
-                  value={filters.city} 
-                  onChange={(v) => onFilterChange("city", v)} 
-                  options={[
-                    { value: "mumbai", label: "Mumbai" },
-                    { value: "delhi", label: "Delhi" },
-                    { value: "bangalore", label: "Bangalore" },
-                    { value: "ahmedabad", label: "Ahmedabad" },
-                    { value: "chennai", label: "Chennai" },
-                  ]} 
-                  placeholder="All Cities" 
-                />
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Input 
-                    type="date" 
-                    label="From Date" 
-                    value={filters.dateFrom} 
-                    onChange={(e) => onFilterChange("dateFrom", e.target.value)} 
-                  />
-                  <Input 
-                    type="date" 
-                    label="To Date" 
-                    value={filters.dateTo} 
-                    onChange={(e) => onFilterChange("dateTo", e.target.value)} 
-                  />
-                </div>
               </div>
 
               {/* Footer */}
