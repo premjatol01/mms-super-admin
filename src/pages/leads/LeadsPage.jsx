@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useLeadsStore } from "../../store/leadsStore";
@@ -10,6 +10,13 @@ import AddEditLeadModal from "./modals/AddEditLeadModal";
 import LeadDetailsDrawer from "./modals/LeadDetailsDrawer";
 import ConfirmModal from "./modals/ConfirmModal";
 import ConvertLeadModal from "./modals/ConvertLeadModal";
+
+const TABS = [
+  { id: "new", label: "New", stages: ["prospect", "new_lead"] },
+  { id: "in_process", label: "In Process", stages: ["contacted", "interested", "follow_up"] },
+  { id: "final", label: "Final", stages: ["converted", "qualified"] },
+  { id: "lost", label: "Lost", stages: ["lost"] },
+];
 
 export default function LeadsPage() {
   const {
@@ -31,12 +38,19 @@ export default function LeadsPage() {
     getFilteredLeads,
   } = useLeadsStore();
 
+  const [activeTab, setActiveTab] = useState("new");
+
   const filteredLeads = useMemo(() => getFilteredLeads(), [filters, getFilteredLeads]);
   
+  const tabLeads = useMemo(() => {
+    const currentStages = TABS.find(t => t.id === activeTab)?.stages || [];
+    return filteredLeads.filter(lead => currentStages.includes(lead.stage));
+  }, [filteredLeads, activeTab]);
+
   const paginatedLeads = useMemo(() => {
     const start = (pagination.page - 1) * pagination.limit;
-    return filteredLeads.slice(start, start + pagination.limit);
-  }, [filteredLeads, pagination]);
+    return tabLeads.slice(start, start + pagination.limit);
+  }, [tabLeads, pagination]);
 
   const handleFilterChange = (key, value) => {
     setFilter(key, value);
@@ -90,12 +104,41 @@ export default function LeadsPage() {
         </Button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-theme overflow-x-auto no-scrollbar">
+        {TABS.map(tab => {
+          const count = filteredLeads.filter(l => tab.stages.includes(l.stage)).length;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setPage(1); // reset to first page when changing tab
+              }}
+              className={`flex items-center gap-2 whitespace-nowrap pb-3 text-sm font-medium transition-colors relative border-b-2 ${
+                isActive
+                  ? "border-theme text-theme"
+                  : "border-transparent text-secondary hover:text-theme"
+              }`}
+            >
+              {tab.label}
+              <span className={`rounded-full px-2 py-0.5 text-xs border ${
+                isActive ? "bg-primary-light border-primary text-theme" : "bg-surface border-theme text-secondary"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search & Filters */}
       <LeadFilters
         filters={filters}
         onFilterChange={handleFilterChange}
         onResetFilters={handleResetFilters}
-        leadCount={filteredLeads.length}
+        leadCount={tabLeads.length}
         cities={cities}
       />
 
@@ -115,7 +158,7 @@ export default function LeadsPage() {
       {/* Pagination */}
       <Pagination
         pagination={pagination}
-        totalItems={filteredLeads.length}
+        totalItems={tabLeads.length}
         onPageChange={setPage}
         onLimitChange={setLimit}
       />

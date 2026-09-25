@@ -28,7 +28,6 @@ const navItems = [
   { label: "QR Config", icon: QrCode, path: "/qr-config" },
   { label: "CMS", icon: FileText, path: "/cms" },
   { label: "Platform Control", icon: Globe, path: "/platform-control" },
-  { label: "Offers", icon: Tag, path: "/offers" },
 ];
 
 export default function Sidebar() {
