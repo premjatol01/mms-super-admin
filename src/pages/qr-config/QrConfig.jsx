@@ -51,13 +51,7 @@ export default function QrConfig() {
     <div className="p-4 sm:p-6">
       <Toaster position="top-right" richColors />
 
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-theme">QR Configuration</h1>
-          <p className="text-sm text-secondary">
-            Manage QR codes and control who they're visible to.
-          </p>
-        </div>
+      <div className="mb-5 flex items-center justify-end">
         <button
           onClick={openAddModal}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-theme hover:bg-primary-light"

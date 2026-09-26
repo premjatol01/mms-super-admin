@@ -94,11 +94,7 @@ export default function LeadsPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-theme">Leads</h1>
-          <p className="text-sm text-secondary">Manage and track restaurant prospects</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
         <Button onClick={openAddModal}>
           <Plus size={16} /> Add Lead
         </Button>

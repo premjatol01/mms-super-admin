@@ -60,11 +60,7 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-theme">Subscriptions</h1>
-          <p className="text-sm text-secondary">Manage restaurant subscriptions, validity and subscription status.</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
         <Button onClick={openAssignModal}>
           <Plus size={16} /> Assign Subscription
         </Button>

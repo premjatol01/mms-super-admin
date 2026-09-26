@@ -64,11 +64,7 @@ export default function PackagesPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-theme">Subscription Packages</h1>
-          <p className="text-sm text-secondary">Create and manage subscription plans for restaurants</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
         <Button onClick={openAddModal}>
           <Plus size={16} /> Add Package
         </Button>

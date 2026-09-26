@@ -2,11 +2,7 @@ import { Pencil } from 'lucide-react';
 
 export default function PlatformControlHeader({ editing, onEdit }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold text-theme">Platform Control</h1>
-        <p className="mt-1 text-sm text-secondary max-w-xl">Manage global platform configuration.</p>
-      </div>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-end">
 
       {!editing && (
         <button

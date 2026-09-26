@@ -71,11 +71,7 @@ export default function RestaurantsPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-theme">Restaurants</h1>
-          <p className="text-sm text-secondary">Manage restaurants registered on the platform</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
         <Button onClick={openAddModal}>
           <Plus size={16} /> Add Restaurant
         </Button>
