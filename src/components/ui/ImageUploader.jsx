@@ -10,7 +10,7 @@ export default function ImageUploader({ value, onChange, label }) {
     if (!file) return;
     const url = URL.createObjectURL(file);
     setPreview(url);
-    onChange?.(url);
+    onChange?.(url, file);
   };
 
   const handleChange = (e) => {

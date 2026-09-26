@@ -5,9 +5,6 @@ import { toast } from 'sonner';
 
 import PlatformControlHeader from './components/PlatformControlHeader';
 import GeneralSettingsCard from './components/GeneralSettingsCard';
-import PlatformInformationCard from './components/PlatformInformationCard';
-import WebsiteConfigurationCard from './components/WebsiteConfigurationCard';
-import SystemPreferencesCard from './components/SystemPreferencesCard';
 import MaintenanceModeCard from './components/MaintenanceModeCard';
 import SaveChangesBar from './components/SaveChangesBar';
 import LoadingState from './components/states/LoadingState';
@@ -155,9 +152,6 @@ export default function PlatformControlPage() {
       {loadStatus === 'ready' && savedSettings && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <GeneralSettingsCard register={register} errors={errors} editing={isEditing} values={values} setValue={setValue} />
-          <PlatformInformationCard register={register} errors={errors} editing={isEditing} />
-          <WebsiteConfigurationCard values={values} setValue={setValue} editing={isEditing} />
-          <SystemPreferencesCard register={register} editing={isEditing} />
           <MaintenanceModeCard values={values} setValue={setValue} register={register} editing={isEditing} />
 
           {saveError && (
