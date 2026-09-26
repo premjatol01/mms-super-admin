@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 
 const ROUTE_TITLES = {
   "/": { title: "Dashboard", desc: "Overview of platform" },
+  "/master-menu": { title: "Master Menu", desc: "Manage global menu items and categories" },
   "/restaurants": { title: "Restaurants", desc: "Manage all onboarded restaurants" },
   "/leads": { title: "Leads", desc: "Manage and track restaurant prospects" },
   "/packages": { title: "Subscription Packages", desc: "Manage available subscription tiers" },

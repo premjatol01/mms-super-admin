@@ -16,10 +16,13 @@ import {
   User,
   Settings,
   LogOut,
+  Utensils,
 } from "lucide-react";
+import useAuthStore from "../store/authStore";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Master Menu", icon: Utensils, path: "/master-menu" },
   { label: "Restaurants", icon: Store, path: "/restaurants" },
   { label: "Leads", icon: ClipboardList, path: "/leads" },
   { label: "Sub. Packages", icon: Package, path: "/packages" },
@@ -33,6 +36,7 @@ const navItems = [
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
 
   return (
     <aside
@@ -91,7 +95,10 @@ export default function Sidebar() {
         </button>
 
         <button
-          onClick={() => navigate("/login")}
+          onClick={async () => {
+            await logout();
+            navigate("/login");
+          }}
           title="Logout"
           className="w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-red-100 hover:text-red-500 transition-colors"
         >
