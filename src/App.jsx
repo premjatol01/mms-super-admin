@@ -5,7 +5,7 @@ import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 import PackagesPage from "./pages/packages/PackagesPage";
 import SubscriptionsPage from "./pages/subscriptions/SubscriptionsPage";
 import LeadsPage from "./pages/leads/LeadsPage";
-import QrConfig from "./pages/qr-config/QrConfig";
+import QRConfigPage from "./pages/qr-config/QRConfigPage";
 import PlatformControlPage from "./pages/platform-control/PlatformControlPage";
 import CmsPage from "./pages/cms/CmsPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -32,7 +32,7 @@ export default function App() {
             <Route path="/packages" element={<PackagesPage />} />
             <Route path="/packages/new" element={<PlaceholderPage title="Create New Package" />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
-            <Route path="/qr-config" element={<QrConfig title="QR Code Configuration" />} />
+            <Route path="/qr-config" element={<QRConfigPage />} />
             <Route path="/cms" element={<CmsPage title="CMS" />} />
             <Route path="/platform-control" element={<PlatformControlPage title="Restaurant Website — Platform Control" />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" />} />

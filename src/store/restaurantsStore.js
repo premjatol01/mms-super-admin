@@ -112,9 +112,10 @@ export const useRestaurantsStore = create((set, get) => ({
   addRestaurant: async (formData) => {
     set({ loading: true });
     try {
-      await restaurantAPI.createRestaurant(formData);
+      const response = await restaurantAPI.createRestaurant(formData);
       set({ showAddModal: false });
       await get().fetchRestaurants();
+      return response.data;
     } catch (error) {
       set({ error: error.message || "Failed to add restaurant" });
       throw error;

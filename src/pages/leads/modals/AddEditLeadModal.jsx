@@ -39,7 +39,7 @@ export default function AddEditLeadModal() {
 
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.restaurantName.trim()) {
@@ -69,14 +69,15 @@ export default function AddEditLeadModal() {
 
     setLoading(true);
     
-    setTimeout(() => {
+    try {
       const lead = {
         restaurantName: formData.restaurantName,
         address: { 
           fullAddress: formData.address,
           city: formData.city,
           state: formData.state,
-          pincode: formData.pincode
+          pincode: formData.pincode,
+          country: "India"
         },
         contactPerson: formData.contactPerson,
         phone: formData.phone,
@@ -89,14 +90,17 @@ export default function AddEditLeadModal() {
       };
       
       if (isEdit) {
-        updateLead(editingLead.id, lead);
+        await updateLead(editingLead.id, lead);
         toast.success("Lead updated successfully");
       } else {
-        addLead(lead);
+        await addLead(lead);
         toast.success("Lead created successfully");
       }
+    } catch (err) {
+      toast.error(err.message || "Failed to save lead");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   if (!showAddModal) return null;
@@ -109,6 +113,7 @@ export default function AddEditLeadModal() {
             <Input 
               label="Restaurant Name" 
               required 
+              maxLength={100}
               value={formData.restaurantName} 
               onChange={(e) => handleChange("restaurantName", e.target.value)} 
               placeholder="Enter restaurant name" 
@@ -125,6 +130,7 @@ export default function AddEditLeadModal() {
             <Textarea 
               label="Restaurant Address" 
               required 
+              maxLength={200}
               value={formData.address} 
               onChange={(e) => handleChange("address", e.target.value)} 
               placeholder="Street address, area, landmark" 
@@ -135,20 +141,24 @@ export default function AddEditLeadModal() {
             <Input 
               label="City" 
               required 
+              maxLength={50}
               value={formData.city} 
               onChange={(e) => handleChange("city", e.target.value)} 
               placeholder="City" 
             />
             <Input 
               label="State" 
+              maxLength={50}
               value={formData.state} 
               onChange={(e) => handleChange("state", e.target.value)} 
               placeholder="State" 
             />
             <Input 
               label="Pincode" 
+              maxLength={6}
+              pattern="[0-9]{6}"
               value={formData.pincode} 
-              onChange={(e) => handleChange("pincode", e.target.value)} 
+              onChange={(e) => handleChange("pincode", e.target.value.replace(/\D/g, ''))} 
               placeholder="Pincode" 
             />
           </div>
@@ -159,20 +169,35 @@ export default function AddEditLeadModal() {
             <Input 
               label="Contact Person Name" 
               required 
+              maxLength={50}
               value={formData.contactPerson} 
               onChange={(e) => handleChange("contactPerson", e.target.value)} 
               placeholder="Full name" 
             />
-            <Input 
-              label="Phone Number" 
-              required 
-              value={formData.phone} 
-              onChange={(e) => handleChange("phone", e.target.value)} 
-              placeholder="+91 9876543210" 
-            />
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Phone Number <span className="text-red-500">*</span>
+              </label>
+              <div className="flex relative">
+                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-theme bg-primary-light/20 text-theme text-sm">
+                  +91
+                </span>
+                <input
+                  type="text"
+                  required
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  value={formData.phone.replace('+91', '').trim()}
+                  onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-3 py-2 rounded-r-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                  placeholder="9876543210"
+                />
+              </div>
+            </div>
             <Input 
               label="Email Address" 
               type="email"
+              maxLength={100}
               value={formData.email} 
               onChange={(e) => handleChange("email", e.target.value)} 
               placeholder="email@example.com" 

@@ -32,8 +32,13 @@ export default function LeadDetailsDrawer() {
     changeStage(selectedLead.id, newStage);
   };
 
-  const handleStatusToggle = () => {
-    toggleStatus(selectedLead.id);
+  const handleStatusToggle = async () => {
+    try {
+      await toggleStatus(selectedLead.id);
+      toast.success("Lead status updated");
+    } catch (err) {
+      toast.error("Failed to update status");
+    }
   };
 
   return (

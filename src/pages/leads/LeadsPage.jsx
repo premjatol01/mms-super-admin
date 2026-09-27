@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useLeadsStore } from "../../store/leadsStore";
@@ -12,6 +12,7 @@ import ConvertLeadModal from "./modals/ConvertLeadModal";
 
 export default function LeadsPage() {
   const {
+    leads,
     filters,
     setFilter,
     resetFilters,
@@ -20,10 +21,15 @@ export default function LeadsPage() {
     openEditModal,
     openConvertModal,
     getFilteredLeads,
-    changeStage
+    changeStage,
+    fetchLeads
   } = useLeadsStore();
 
-  const filteredLeads = useMemo(() => getFilteredLeads(), [filters, getFilteredLeads]);
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
+
+  const filteredLeads = useMemo(() => getFilteredLeads(), [leads, getFilteredLeads]);
 
   const handleFilterChange = (key, value) => {
     setFilter(key, value);

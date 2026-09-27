@@ -29,6 +29,7 @@ export default function ConvertLeadModal() {
   } = useLeadsStore();
 
   const [loading, setLoading] = useState(false);
+  const { addRestaurant } = useRestaurantsStore();
 
   if (!showConvertModal) return null;
 
@@ -68,8 +69,6 @@ export default function ConvertLeadModal() {
     }
   };
 
-  const { addRestaurant } = useRestaurantsStore();
-
   const handleComplete = async () => {
     setLoading(true);
     
@@ -106,10 +105,8 @@ export default function ConvertLeadModal() {
       // Create the restaurant in the backend
       const res = await addRestaurant(submitData);
       
-      // We don't have the new restaurant ID from the store action return value (it's void),
-      // but the lead conversion just marks it converted locally.
-      // Ideally convertLead would also hit an API, but since leads is local mock, we just mark it converted.
-      convertLead("converted");
+      // Hit the API to mark lead as converted and store the new restaurant ID
+      await convertLead(res._id);
       toast.success("Lead converted successfully!");
     } catch (err) {
       toast.error(err.message || "Failed to convert lead");
