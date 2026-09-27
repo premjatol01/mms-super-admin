@@ -6,7 +6,6 @@ import PackagesPage from "./pages/packages/PackagesPage";
 import SubscriptionsPage from "./pages/subscriptions/SubscriptionsPage";
 import LeadsPage from "./pages/leads/LeadsPage";
 import QrConfig from "./pages/qr-config/QrConfig";
-import FeaturesPage from "./pages/features/FeaturesPage";
 import PlatformControlPage from "./pages/platform-control/PlatformControlPage";
 import CmsPage from "./pages/cms/CmsPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -32,7 +31,6 @@ export default function App() {
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/packages" element={<PackagesPage />} />
             <Route path="/packages/new" element={<PlaceholderPage title="Create New Package" />} />
-            <Route path="/features" element={<FeaturesPage title="Feature Availability Management" />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/qr-config" element={<QrConfig title="QR Code Configuration" />} />
             <Route path="/cms" element={<CmsPage title="CMS" />} />

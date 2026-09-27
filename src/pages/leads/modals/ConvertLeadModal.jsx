@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Check, Building2, User, Phone, Mail, CreditCard } from "lucide-react";
 import { useLeadsStore } from "../../../store/leadsStore";
-import { subscriptionPackages } from "../../../store/restaurantsStore";
+import { subscriptionPackages, useRestaurantsStore } from "../../../store/restaurantsStore";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
@@ -68,42 +68,54 @@ export default function ConvertLeadModal() {
     }
   };
 
-  const handleComplete = () => {
+  const { addRestaurant } = useRestaurantsStore();
+
+  const handleComplete = async () => {
     setLoading(true);
     
-    setTimeout(() => {
-      // Generate a new restaurant ID
-      const newRestaurantId = `R-${Date.now()}`;
+    try {
+      const submitData = new FormData();
+      submitData.append('name', convertData.restaurantName);
+      submitData.append('description', '');
+      submitData.append('phone', '');
+      submitData.append('email', convertData.adminEmail || '');
+      submitData.append('website', '');
+      submitData.append('status', convertData.status);
       
-      // Create the restaurant
-      const restaurant = {
-        name: convertData.restaurantName,
-        address: {
-          fullAddress: convertData.address,
-          city: convertData.city,
-          state: convertData.state,
-          pincode: convertData.pincode,
-          country: "India"
-        },
-        admin: {
-          name: convertData.adminName,
-          phone: convertData.adminPhone,
-          email: convertData.adminEmail
-        },
-        subscription: {
-          package: convertData.package,
-          status: "active",
-          startDate: new Date().toISOString().split('T')[0],
-          endDate: calculateEndDate(new Date().toISOString().split('T')[0], convertData.subscriptionDuration)
-        },
-        status: convertData.status
-      };
+      submitData.append('address', JSON.stringify({
+        city: convertData.city || '', 
+        state: convertData.state || '', 
+        country: "India", 
+        pincode: convertData.pincode || '', 
+        fullAddress: convertData.address || ''
+      }));
       
-      // Convert the lead
-      convertLead(newRestaurantId);
+      submitData.append('admin', JSON.stringify({
+        name: convertData.adminName, 
+        email: convertData.adminEmail || '', 
+        phone: convertData.adminPhone ? (convertData.adminPhone.startsWith('+91') ? convertData.adminPhone : `+91 ${convertData.adminPhone.replace(/\D/g, '')}`) : ''
+      }));
+      
+      submitData.append('subscription', JSON.stringify({
+        package: convertData.package, 
+        status: "active", 
+        startDate: new Date().toISOString().split('T')[0], 
+        endDate: calculateEndDate(new Date().toISOString().split('T')[0], convertData.subscriptionDuration) 
+      }));
+
+      // Create the restaurant in the backend
+      const res = await addRestaurant(submitData);
+      
+      // We don't have the new restaurant ID from the store action return value (it's void),
+      // but the lead conversion just marks it converted locally.
+      // Ideally convertLead would also hit an API, but since leads is local mock, we just mark it converted.
+      convertLead("converted");
       toast.success("Lead converted successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to convert lead");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const selectedPackage = subscriptionPackages.find(p => p.label === convertData.package);

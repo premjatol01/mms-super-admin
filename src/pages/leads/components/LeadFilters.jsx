@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { X, SlidersHorizontal } from "lucide-react";
+import { X, SlidersHorizontal, Plus } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
 
@@ -8,7 +8,8 @@ export default function LeadFilters({
   onFilterChange, 
   onResetFilters, 
   leadCount,
-  cities = []
+  cities = [],
+  onAdd
 }) {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const drawerRef = useRef(null);
@@ -72,6 +73,12 @@ export default function LeadFilters({
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={onResetFilters}>
             <X size={14} /> Clear
+          </Button>
+        )}
+
+        {onAdd && (
+          <Button size="sm" onClick={onAdd}>
+            <Plus size={14} /> Add Lead
           </Button>
         )}
 
