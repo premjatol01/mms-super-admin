@@ -51,7 +51,7 @@ export default function AddEditRestaurantModal() {
 
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
@@ -77,44 +77,54 @@ export default function AddEditRestaurantModal() {
 
     setLoading(true);
     
-    setTimeout(() => {
-      const restaurant = {
-        name: formData.name,
-        logo: formData.logo,
-        description: formData.description,
-        address: { 
-          city: formData.city, 
-          state: formData.state, 
-          country: formData.country, 
-          pincode: formData.pincode, 
-          fullAddress: formData.address 
-        },
-        admin: { 
-          name: formData.adminName, 
-          email: formData.adminEmail, 
-          phone: formData.adminPhone 
-        },
-        phone: formData.phone,
-        email: formData.email,
-        website: formData.website,
-        subscription: { 
-          package: formData.package, 
-          status: formData.package ? "active" : "pending", 
-          startDate: formData.startDate, 
-          endDate: formData.startDate ? calculateEndDate(formData.startDate, formData.duration) : null 
-        },
-        status: formData.status,
-      };
+    try {
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('description', formData.description);
+      submitData.append('phone', formData.phone ? `+91 ${formData.phone.replace(/\D/g, '')}` : '');
+      submitData.append('email', formData.email);
+      submitData.append('website', formData.website);
+      submitData.append('status', formData.status);
       
+      submitData.append('address', JSON.stringify({
+        city: formData.city, 
+        state: formData.state, 
+        country: formData.country, 
+        pincode: formData.pincode, 
+        fullAddress: formData.address 
+      }));
+      
+      submitData.append('admin', JSON.stringify({
+        name: formData.adminName, 
+        email: formData.adminEmail, 
+        phone: formData.adminPhone ? `+91 ${formData.adminPhone.replace(/\D/g, '')}` : '' 
+      }));
+      
+      submitData.append('subscription', JSON.stringify({
+        package: formData.package, 
+        status: formData.package ? "active" : "pending", 
+        startDate: formData.startDate || null, 
+        endDate: formData.startDate ? calculateEndDate(formData.startDate, formData.duration) : null 
+      }));
+      
+      if (formData.logoFile) {
+        submitData.append('logo', formData.logoFile);
+      } else if (formData.logo) {
+        submitData.append('logo', formData.logo);
+      }
+
       if (isEdit) {
-        updateRestaurant(editingRestaurant.id, restaurant);
+        await updateRestaurant(editingRestaurant._id || editingRestaurant.id, submitData);
         toast.success("Restaurant updated successfully");
       } else {
-        addRestaurant(restaurant);
+        await addRestaurant(submitData);
         toast.success("Restaurant created successfully");
       }
+    } catch (error) {
+      // Error toast is handled by the store
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   if (!showAddModal) return null;
@@ -127,14 +137,22 @@ export default function AddEditRestaurantModal() {
             <Input 
               label="Restaurant Name" 
               required 
+              maxLength={100}
               value={formData.name} 
               onChange={(e) => handleChange("name", e.target.value)} 
               placeholder="Enter restaurant name" 
             />
             <ImageUploader 
-              label="Restaurant Logo" 
-              value={formData.logo} 
-              onChange={(url) => handleChange("logo", url)} 
+              label="Restaurant Logo (Max 1MB)" 
+              value={formData.logo ? (formData.logo.startsWith('http') || formData.logo.startsWith('blob:') ? formData.logo : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${formData.logo}`) : ''} 
+              onChange={(url, file) => {
+                if (file && file.size > 1024 * 1024) {
+                  toast.error("Logo size must be under 1MB");
+                  return;
+                }
+                handleChange("logo", url);
+                if (file) handleChange("logoFile", file);
+              }} 
             />
           </div>
           <div className="mt-4">
@@ -152,6 +170,7 @@ export default function AddEditRestaurantModal() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input 
               label="Street Address" 
+              maxLength={200}
               value={formData.address} 
               onChange={(e) => handleChange("address", e.target.value)} 
               placeholder="123 Main Street" 
@@ -177,8 +196,10 @@ export default function AddEditRestaurantModal() {
             />
             <Input 
               label="Pincode" 
+              maxLength={6}
+              pattern="[0-9]{6}"
               value={formData.pincode} 
-              onChange={(e) => handleChange("pincode", e.target.value)} 
+              onChange={(e) => handleChange("pincode", e.target.value.replace(/\D/g, ''))} 
               placeholder="400001" 
             />
           </div>
@@ -186,12 +207,23 @@ export default function AddEditRestaurantModal() {
 
         <FormSection title="Contact Information">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input 
-              label="Restaurant Phone" 
-              value={formData.phone} 
-              onChange={(e) => handleChange("phone", e.target.value)} 
-              placeholder="+91 9876543210" 
-            />
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1.5">Restaurant Phone</label>
+              <div className="flex relative">
+                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-theme bg-primary-light/20 text-theme text-sm">
+                  +91
+                </span>
+                <input
+                  type="text"
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  value={formData.phone.replace('+91', '').trim()}
+                  onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-3 py-2 rounded-r-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                  placeholder="9876543210"
+                />
+              </div>
+            </div>
             <Input 
               label="Restaurant Email" 
               type="email" 
@@ -225,13 +257,24 @@ export default function AddEditRestaurantModal() {
               onChange={(e) => handleChange("adminEmail", e.target.value)} 
               placeholder="admin@restaurant.com" 
             />
-            <Input 
-              label="Admin Phone" 
-              required 
-              value={formData.adminPhone} 
-              onChange={(e) => handleChange("adminPhone", e.target.value)} 
-              placeholder="+91 9876543210" 
-            />
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1.5">Admin Phone <span className="text-red-500">*</span></label>
+              <div className="flex relative">
+                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-theme bg-primary-light/20 text-theme text-sm">
+                  +91
+                </span>
+                <input
+                  type="text"
+                  required
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  value={formData.adminPhone.replace('+91', '').trim()}
+                  onChange={(e) => handleChange("adminPhone", e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-3 py-2 rounded-r-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                  placeholder="9876543210"
+                />
+              </div>
+            </div>
           </div>
         </FormSection>
 
@@ -241,25 +284,8 @@ export default function AddEditRestaurantModal() {
               label="Package" 
               value={formData.package} 
               onChange={(v) => handleChange("package", v)} 
-              options={subscriptionPackages.map(p => ({ value: p.label, label: `${p.label} (${p.duration} days - ₹${p.price})` }))}
+              options={subscriptionPackages.map(p => ({ value: p.label, label: `${p.label} (₹${p.price})` }))}
               placeholder="Select package"
-            />
-            <Select 
-              label="Duration" 
-              value={formData.duration} 
-              onChange={(v) => handleChange("duration", v)} 
-              options={[
-                { value: "30", label: "30 days" },
-                { value: "90", label: "90 days" },
-                { value: "180", label: "180 days" },
-                { value: "365", label: "1 year" },
-              ]} 
-            />
-            <Input 
-              label="Start Date" 
-              type="date" 
-              value={formData.startDate} 
-              onChange={(e) => handleChange("startDate", e.target.value)} 
             />
             <Select 
               label="Status" 

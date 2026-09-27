@@ -19,16 +19,22 @@ export default function GeneralSettingsCard({ register, errors, editing, values,
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <ImageUploader
           label="Platform Logo"
-          value={values.logoUrl}
-          onChange={(url) => setValue('logoUrl', url, { shouldDirty: true })}
+          value={values.logoUrl ? (values.logoUrl.startsWith('http') || values.logoUrl.startsWith('blob:') ? values.logoUrl : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${values.logoUrl}`) : ''}
+          onChange={(url, file) => {
+            setValue('logoUrl', url, { shouldDirty: true });
+            if (file) setValue('logoFile', file, { shouldDirty: true });
+          }}
           editing={editing}
           helpText="PNG, JPG or SVG, up to 2MB."
           shape="rect"
         />
         <ImageUploader
           label="Platform Favicon"
-          value={values.faviconUrl}
-          onChange={(url) => setValue('faviconUrl', url, { shouldDirty: true })}
+          value={values.faviconUrl ? (values.faviconUrl.startsWith('http') || values.faviconUrl.startsWith('blob:') ? values.faviconUrl : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${values.faviconUrl}`) : ''}
+          onChange={(url, file) => {
+            setValue('faviconUrl', url, { shouldDirty: true });
+            if (file) setValue('faviconFile', file, { shouldDirty: true });
+          }}
           editing={editing}
           accept="image/png,image/x-icon,image/vnd.microsoft.icon"
           helpText="PNG or ICO, up to 2MB."

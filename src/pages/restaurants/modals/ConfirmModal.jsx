@@ -6,12 +6,10 @@ export default function ConfirmModal() {
 
   if (!showConfirmModal || !confirmAction) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (confirmAction === "toggleStatus" && selectedRestaurant) {
-      toggleStatus(selectedRestaurant.id);
+      await toggleStatus(selectedRestaurant._id || selectedRestaurant.id);
     }
-    // Add more actions as needed
-    hideConfirm();
   };
 
   const getContent = () => {

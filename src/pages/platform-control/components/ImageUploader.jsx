@@ -34,7 +34,7 @@ export default function ImageUploader({
 
     // Simulated upload latency — swap for a real upload call.
     setTimeout(() => {
-      onChange(previewUrl);
+      onChange(previewUrl, file);
       setIsUploading(false);
     }, 500);
   };

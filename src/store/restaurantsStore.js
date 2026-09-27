@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import { initialRestaurants, subscriptionPackages } from "../pages/restaurants/data/restaurantData";
+import { restaurantAPI } from "../api/restaurantAPI";
+import { subscriptionPackages } from "../pages/restaurants/data/restaurantData";
 
 export const useRestaurantsStore = create((set, get) => ({
-  restaurants: initialRestaurants,
+  restaurants: [],
   loading: false,
   error: null,
   filters: {
@@ -17,7 +18,7 @@ export const useRestaurantsStore = create((set, get) => ({
   pagination: {
     page: 1,
     limit: 10,
-    total: initialRestaurants.length,
+    total: 0,
   },
   selectedRestaurants: [],
   showAddModal: false,
@@ -26,6 +27,39 @@ export const useRestaurantsStore = create((set, get) => ({
   confirmAction: null,
   selectedRestaurant: null,
   editingRestaurant: null,
+
+  // Fetch
+  fetchRestaurants: async () => {
+    const state = get();
+    set({ loading: true, error: null });
+    try {
+      const params = {
+        ...state.filters,
+        page: state.pagination.page,
+        limit: state.pagination.limit,
+      };
+      
+      // Clean up empty params
+      Object.keys(params).forEach(key => {
+        if (!params[key]) delete params[key];
+      });
+
+      const res = await restaurantAPI.getRestaurants(params);
+      
+      set({ 
+        restaurants: res.data,
+        pagination: {
+          ...state.pagination,
+          total: res.pagination.total,
+          page: res.pagination.page,
+          limit: res.pagination.limit,
+        },
+        loading: false 
+      });
+    } catch (error) {
+      set({ error: error.message || "Failed to fetch restaurants", loading: false });
+    }
+  },
 
   // Filters
   setFilter: (key, value) => set((state) => ({ 
@@ -43,10 +77,9 @@ export const useRestaurantsStore = create((set, get) => ({
 
   // Selection
   toggleSelectAll: () => set((state) => {
-    const filtered = get().getFilteredRestaurants();
-    if (filtered.length === 0) return state;
-    const allSelected = state.selectedRestaurants.length === filtered.length;
-    return { selectedRestaurants: allSelected ? [] : filtered.map(r => r.id) };
+    if (state.restaurants.length === 0) return state;
+    const allSelected = state.selectedRestaurants.length === state.restaurants.length;
+    return { selectedRestaurants: allSelected ? [] : state.restaurants.map(r => r._id) };
   }),
   toggleSelect: (id) => set((state) => ({
     selectedRestaurants: state.selectedRestaurants.includes(id)
@@ -75,53 +108,75 @@ export const useRestaurantsStore = create((set, get) => ({
     selectedRestaurant: null 
   }),
 
-  // CRUD
-  addRestaurant: (restaurant) => set((state) => ({
-    restaurants: [{ 
-      ...restaurant, 
-      id: String(state.restaurants.length + 1), 
-      createdAt: new Date().toISOString().split('T')[0] 
-    }, ...state.restaurants],
-    showAddModal: false,
-  })),
-
-  updateRestaurant: (id, data) => set((state) => ({
-    restaurants: state.restaurants.map(r => r.id === id ? { ...r, ...data } : r),
-    selectedRestaurant: state.selectedRestaurant?.id === id ? { ...state.selectedRestaurant, ...data } : state.selectedRestaurant,
-    showAddModal: false,
-    editingRestaurant: null,
-  })),
-
-  toggleStatus: (id) => set((state) => ({
-    restaurants: state.restaurants.map(r => r.id === id ? { 
-      ...r, 
-      status: r.status === "active" ? "inactive" : "active" 
-    } : r),
-    selectedRestaurant: state.selectedRestaurant?.id === id ? { 
-      ...state.selectedRestaurant, 
-      status: state.selectedRestaurant.status === "active" ? "inactive" : "active" 
-    } : state.selectedRestaurant,
-  })),
-
-  getFilteredRestaurants: () => {
-    const { restaurants, filters } = get();
-    return restaurants.filter(r => {
-      const searchMatch = !filters.search || 
-        r.name.toLowerCase().includes(filters.search.toLowerCase()) || 
-        r.admin.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        r.admin.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-        r.admin.phone.includes(filters.search);
-      
-      const statusMatch = !filters.status || r.status === filters.status;
-      const subStatusMatch = !filters.subscriptionStatus || r.subscription.status === filters.subscriptionStatus;
-      const packageMatch = !filters.package || r.subscription.package.toLowerCase() === filters.package.toLowerCase();
-      const cityMatch = !filters.city || r.address.city.toLowerCase() === filters.city.toLowerCase();
-      const dateFromMatch = !filters.dateFrom || r.createdAt >= filters.dateFrom;
-      const dateToMatch = !filters.dateTo || r.createdAt <= filters.dateTo;
-      
-      return searchMatch && statusMatch && subStatusMatch && packageMatch && cityMatch && dateFromMatch && dateToMatch;
-    });
+  // CRUD Actions
+  addRestaurant: async (formData) => {
+    set({ loading: true });
+    try {
+      await restaurantAPI.createRestaurant(formData);
+      set({ showAddModal: false });
+      await get().fetchRestaurants();
+    } catch (error) {
+      set({ error: error.message || "Failed to add restaurant" });
+      throw error;
+    } finally {
+      set({ loading: false });
+    }
   },
+
+  updateRestaurant: async (id, formData) => {
+    set({ loading: true });
+    try {
+      await restaurantAPI.updateRestaurant(id, formData);
+      set({ showAddModal: false, editingRestaurant: null });
+      await get().fetchRestaurants();
+      
+      // Update selected if open
+      const { selectedRestaurant } = get();
+      if (selectedRestaurant && selectedRestaurant._id === id) {
+        const res = await restaurantAPI.getRestaurant(id);
+        set({ selectedRestaurant: res.data });
+      }
+    } catch (error) {
+      set({ error: error.message || "Failed to update restaurant" });
+      throw error;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  toggleStatus: async (id) => {
+    set({ loading: true });
+    try {
+      await restaurantAPI.toggleStatus(id);
+      await get().fetchRestaurants();
+      
+      const { selectedRestaurant } = get();
+      if (selectedRestaurant && selectedRestaurant._id === id) {
+        const res = await restaurantAPI.getRestaurant(id);
+        set({ selectedRestaurant: res.data });
+      }
+    } catch (error) {
+      set({ error: error.message || "Failed to toggle status" });
+      throw error;
+    } finally {
+      set({ loading: false });
+      set({ showConfirmModal: false, confirmAction: null, selectedRestaurant: null });
+    }
+  },
+  
+  bulkUpdateStatus: async (ids, status) => {
+    set({ loading: true });
+    try {
+      await restaurantAPI.bulkUpdateStatus(ids, status);
+      await get().fetchRestaurants();
+      set({ selectedRestaurants: [] });
+    } catch (error) {
+      set({ error: error.message || "Failed to update restaurants" });
+      throw error;
+    } finally {
+      set({ loading: false });
+    }
+  }
 }));
 
 export { subscriptionPackages };

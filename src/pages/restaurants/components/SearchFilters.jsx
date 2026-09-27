@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X, SlidersHorizontal, Plus } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
 import Input from "../../../components/ui/Input";
@@ -8,7 +8,8 @@ export default function SearchFilters({
   filters, 
   onFilterChange, 
   onResetFilters, 
-  restaurantCount 
+  restaurantCount,
+  onAdd
 }) {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const drawerRef = useRef(null);
@@ -72,6 +73,12 @@ export default function SearchFilters({
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={onResetFilters}>
             <X size={14} /> Clear
+          </Button>
+        )}
+
+        {onAdd && (
+          <Button size="sm" onClick={onAdd}>
+            <Plus size={14} /> Add Restaurant
           </Button>
         )}
 

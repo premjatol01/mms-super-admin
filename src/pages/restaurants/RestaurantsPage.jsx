@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useRestaurantsStore } from "../../store/restaurantsStore";
@@ -12,6 +12,8 @@ import ConfirmModal from "./modals/ConfirmModal";
 
 export default function RestaurantsPage() {
   const {
+    restaurants,
+    loading,
     filters,
     setFilter,
     resetFilters,
@@ -26,15 +28,13 @@ export default function RestaurantsPage() {
     openDetails,
     openEditModal,
     showConfirm,
-    getFilteredRestaurants,
+    fetchRestaurants,
+    bulkUpdateStatus,
   } = useRestaurantsStore();
 
-  const filteredRestaurants = useMemo(() => getFilteredRestaurants(), [filters, getFilteredRestaurants]);
-  
-  const paginatedRestaurants = useMemo(() => {
-    const start = (pagination.page - 1) * pagination.limit;
-    return filteredRestaurants.slice(start, start + pagination.limit);
-  }, [filteredRestaurants, pagination]);
+  useEffect(() => {
+    fetchRestaurants();
+  }, [filters, pagination.page, pagination.limit, fetchRestaurants]);
 
   const handleFilterChange = (key, value) => {
     setFilter(key, value);
@@ -58,53 +58,64 @@ export default function RestaurantsPage() {
     showConfirm("toggleStatus", restaurant);
   };
 
-  const handleBulkActivate = () => {
-    toast.success(`Activating ${selectedRestaurants.length} restaurants`);
-    clearSelection();
+  const handleBulkActivate = async () => {
+    try {
+      await bulkUpdateStatus(selectedRestaurants, 'active');
+      toast.success(`Activated ${selectedRestaurants.length} restaurants`);
+    } catch (err) {
+      toast.error('Failed to activate restaurants');
+    }
   };
 
-  const handleBulkDeactivate = () => {
-    toast.success(`Deactivating ${selectedRestaurants.length} restaurants`);
-    clearSelection();
+  const handleBulkDeactivate = async () => {
+    try {
+      await bulkUpdateStatus(selectedRestaurants, 'inactive');
+      toast.success(`Deactivated ${selectedRestaurants.length} restaurants`);
+    } catch (err) {
+      toast.error('Failed to deactivate restaurants');
+    }
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
-        <Button onClick={openAddModal}>
-          <Plus size={16} /> Add Restaurant
-        </Button>
+    <div className="flex flex-col h-[calc(100vh-8rem)]">
+      {/* Search & Filters */}
+      <div className="flex-none mb-5">
+        <SearchFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onResetFilters={handleResetFilters}
+          restaurantCount={pagination.total}
+          onAdd={openAddModal}
+        />
       </div>
 
-      {/* Search & Filters */}
-      <SearchFilters
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={handleResetFilters}
-        restaurantCount={filteredRestaurants.length}
-      />
-
       {/* Table */}
-      <RestaurantTable
-        restaurants={paginatedRestaurants}
-        selectedRestaurants={selectedRestaurants}
-        onToggleSelect={toggleSelect}
-        onToggleSelectAll={toggleSelectAll}
-        onView={openDetails}
-        onEdit={openEditModal}
-        onToggleStatus={handleToggleStatus}
-        onManageSubscription={handleManageSubscription}
-        onManageFeatures={handleManageFeatures}
-      />
+      <div className="flex-1 min-h-0 overflow-hidden bg-surface border border-theme rounded-xl flex flex-col mb-5">
+        <div className="flex-1 overflow-auto">
+          <RestaurantTable
+            restaurants={restaurants}
+            loading={loading}
+            selectedRestaurants={selectedRestaurants}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAll}
+            onView={openDetails}
+            onEdit={openEditModal}
+            onToggleStatus={handleToggleStatus}
+            onManageSubscription={handleManageSubscription}
+            onManageFeatures={handleManageFeatures}
+          />
+        </div>
+      </div>
 
       {/* Pagination */}
-      <Pagination
-        pagination={pagination}
-        totalItems={filteredRestaurants.length}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-      />
+      <div className="flex-none">
+        <Pagination
+          pagination={pagination}
+          totalItems={pagination.total}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
+      </div>
 
       {/* Bulk Actions Bar */}
       {selectedRestaurants.length > 0 && (

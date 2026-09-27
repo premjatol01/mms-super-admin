@@ -96,13 +96,15 @@ export default function RestaurantTable({
             </tr>
           </thead>
           <tbody>
-            {restaurants.map((restaurant) => (
-              <tr key={restaurant.id} className="border-b border-theme hover:bg-primary-light/10 transition-colors">
+            {restaurants.map((restaurant) => {
+              const rId = restaurant._id || restaurant.id;
+              return (
+              <tr key={rId} className="border-b border-theme hover:bg-primary-light/10 transition-colors">
                 <td className="px-4 py-3">
                   <input 
                     type="checkbox" 
-                    checked={selectedRestaurants.includes(restaurant.id)} 
-                    onChange={() => onToggleSelect(restaurant.id)} 
+                    checked={selectedRestaurants.includes(rId)} 
+                    onChange={() => onToggleSelect(rId)} 
                     className="rounded border-theme" 
                   />
                 </td>
@@ -110,14 +112,14 @@ export default function RestaurantTable({
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
                       {restaurant.logo ? (
-                        <img src={restaurant.logo} alt="" className="w-full h-full object-cover rounded-lg" />
+                        <img src={restaurant.logo.startsWith('http') ? restaurant.logo : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${restaurant.logo}`} alt="" className="w-full h-full object-cover rounded-lg" />
                       ) : (
                         restaurant.name[0]
                       )}
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-theme truncate">{restaurant.name}</p>
-                      <p className="text-xs text-secondary">ID: {restaurant.id}</p>
+                      <p className="text-xs text-secondary">ID: {rId.slice(-6)}</p>
                     </div>
                   </div>
                 </td>
@@ -134,7 +136,7 @@ export default function RestaurantTable({
                   <p className="text-sm text-theme">{restaurant.address?.city}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <p className="text-sm text-theme">{restaurant.subscription?.package}</p>
+                  <p className="text-sm text-theme">{restaurant.subscription?.packageName || restaurant.subscription?.package}</p>
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge status={restaurant.subscription?.status} type="subscription" />
@@ -143,21 +145,21 @@ export default function RestaurantTable({
                   <StatusBadge status={restaurant.status} />
                 </td>
                 <td className="px-4 py-3">
-                  <p className="text-sm text-theme">{restaurant.createdAt}</p>
+                  <p className="text-sm text-theme">{new Date(restaurant.createdAt).toLocaleDateString()}</p>
                 </td>
                 <td className="px-4 py-3 relative">
                   <div className="relative">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setOpenDropdownId(openDropdownId === restaurant.id ? null : restaurant.id);
+                        setOpenDropdownId(openDropdownId === rId ? null : rId);
                       }}
                       className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors"
                     >
-                      {openDropdownId === restaurant.id ? <X size={16} /> : <MoreHorizontal size={16} />}
+                      {openDropdownId === rId ? <X size={16} /> : <MoreHorizontal size={16} />}
                     </button>
                     
-                    {openDropdownId === restaurant.id && (
+                    {openDropdownId === rId && (
                       <div className="absolute right-0 top-full mt-1 bg-surface border border-theme rounded-lg shadow-lg z-20 w-44">
                         <button 
                           onClick={() => handleActionClick(onView, restaurant)}
@@ -198,7 +200,7 @@ export default function RestaurantTable({
                   </div>
                 </td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>
