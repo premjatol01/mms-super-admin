@@ -58,6 +58,27 @@ export default function RestaurantsPage() {
     showConfirm("toggleStatus", restaurant);
   };
 
+  const handleSendInvite = async (restaurant) => {
+    try {
+      toast.loading("Sending invitation...", { id: "invite" });
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/restaurants/${restaurant._id || restaurant.id}/send-invite`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Invitation sent to ${restaurant.admin?.email}`, { id: "invite" });
+      } else {
+        toast.error(data.message || 'Failed to send invite', { id: "invite" });
+      }
+    } catch (err) {
+      toast.error('Network error', { id: "invite" });
+    }
+  };
+
   const handleBulkActivate = async () => {
     try {
       await bulkUpdateStatus(selectedRestaurants, 'active');
@@ -103,6 +124,7 @@ export default function RestaurantsPage() {
             onToggleStatus={handleToggleStatus}
             onManageSubscription={handleManageSubscription}
             onManageFeatures={handleManageFeatures}
+              onSendInvite={handleSendInvite}
           />
         </div>
       </div>

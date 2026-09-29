@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Eye, Edit2, Power, CreditCard, ToggleLeft, X } from "lucide-react";
+import { MoreHorizontal, Eye, Edit2, Power, CreditCard, ToggleLeft, X, Mail } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 
 export default function RestaurantTable({ 
@@ -11,7 +11,8 @@ export default function RestaurantTable({
   onEdit,
   onToggleStatus,
   onManageSubscription,
-  onManageFeatures 
+  onManageFeatures,
+  onSendInvite
 }) {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const containerRef = useRef(null);
@@ -184,6 +185,12 @@ export default function RestaurantTable({
                           className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-theme hover:bg-primary-light transition-colors"
                         >
                           <ToggleLeft size={14} /> Features
+                        </button>
+                        <button 
+                          onClick={() => handleActionClick(onSendInvite, restaurant)}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-theme hover:bg-primary-light transition-colors"
+                        >
+                          <Mail size={14} /> Send Invite
                         </button>
                         <button 
                           onClick={() => handleActionClick(onToggleStatus, restaurant)}
