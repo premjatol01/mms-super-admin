@@ -10,6 +10,7 @@ import PlatformControlPage from "./pages/platform-control/PlatformControlPage";
 import CmsPage from "./pages/cms/CmsPage";
 import LoginPage from "./pages/auth/LoginPage";
 import MasterMenuPage from "./pages/master-menu/MasterMenuPage";
+import DesignRequestsPage from "./pages/design-requests/DesignRequestsPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/master-menu" element={<MasterMenuPage />} />
             <Route path="/restaurants" element={<RestaurantsPage />} />
             <Route path="/leads" element={<LeadsPage />} />
+            <Route path="/design-requests" element={<DesignRequestsPage />} />
             <Route path="/packages" element={<PackagesPage />} />
             <Route path="/packages/new" element={<PlaceholderPage title="Create New Package" />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />

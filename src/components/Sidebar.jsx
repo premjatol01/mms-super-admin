@@ -16,12 +16,14 @@ import {
   Settings,
   LogOut,
   Utensils,
+  Palette,
 } from "lucide-react";
 import useAuthStore from "../store/authStore";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { label: "Master Menu", icon: Utensils, path: "/master-menu" },
+  { label: "Design Requests", icon: Palette, path: "/design-requests" },
   { label: "Restaurants", icon: Store, path: "/restaurants" },
   { label: "Leads", icon: ClipboardList, path: "/leads" },
   { label: "Sub. Packages", icon: Package, path: "/packages" },
