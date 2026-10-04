@@ -97,7 +97,8 @@ export default function Sidebar() {
         <button
           onClick={async () => {
             await logout();
-            navigate("/login");
+            const marketingWebUrl = import.meta.env.VITE_MARKETING_WEBSITE_URL || "http://localhost:3000";
+            window.location.href = `${marketingWebUrl}/login`;
           }}
           title="Logout"
           className="w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-red-100 hover:text-red-500 transition-colors"
