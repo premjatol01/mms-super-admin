@@ -54,7 +54,7 @@ export default function QrConfig() {
       <div className="mb-5 flex items-center justify-end">
         <button
           onClick={openAddModal}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-theme hover:bg-primary-light"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors"
         >
           <Plus size={16} />
           Add QR Code

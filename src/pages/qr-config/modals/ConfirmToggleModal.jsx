@@ -38,7 +38,7 @@ export default function ConfirmToggleModal({ qrCode, onCancel, onConfirm }) {
           </button>
           <button
             onClick={() => onConfirm(qrCode)}
-            className="rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-theme hover:bg-primary-light"
+            className="rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors"
           >
             {willActivate ? "Activate" : "Deactivate"}
           </button>

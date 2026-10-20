@@ -19,7 +19,7 @@ export default function Select({ label, error, required, options = [], className
         styles={{
           control: (base, state) => ({
             ...base,
-            borderColor: error ? '#f87171' : state.isFocused ? 'var(--color-primary)' : '#e5e7eb',
+            borderColor: error ? '#f87171' : state.isFocused ? 'var(--color-primary)' : 'var(--color-border)',
             boxShadow: state.isFocused ? `0 0 0 1px ${error ? '#ef4444' : 'var(--color-primary)'}` : 'none',
             '&:hover': {
               borderColor: error ? '#ef4444' : 'var(--color-primary)'
@@ -30,16 +30,16 @@ export default function Select({ label, error, required, options = [], className
           menu: (base) => ({
             ...base,
             zIndex: 50,
-            backgroundColor: 'white',
+            backgroundColor: 'var(--color-surface)',
           }),
           option: (base, state) => ({
             ...base,
             backgroundColor: state.isSelected 
               ? 'var(--color-primary)' 
               : state.isFocused 
-                ? '#f3f4f6' 
+                ? 'var(--color-secondary)' 
                 : 'transparent',
-            color: state.isSelected ? 'white' : '#1f2937',
+            color: state.isSelected ? 'white' : 'var(--color-text)',
             cursor: 'pointer',
             '&:active': {
               backgroundColor: 'var(--color-primary)'
@@ -47,7 +47,7 @@ export default function Select({ label, error, required, options = [], className
           }),
           singleValue: (base) => ({
             ...base,
-            color: '#1f2937',
+            color: 'var(--color-text)',
           })
         }}
         {...props}

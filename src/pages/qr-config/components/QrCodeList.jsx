@@ -64,7 +64,7 @@ export default function QrCodeList({
               onClick={() => setStatusFilter(filter.value)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                 statusFilter === filter.value
-                  ? "bg-primary text-theme"
+                  ? "bg-primary text-white"
                   : "text-secondary hover:text-theme"
               }`}
             >
