@@ -111,22 +111,20 @@ export default function RestaurantsPage() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 min-h-0 overflow-hidden bg-surface border border-theme rounded-xl flex flex-col mb-5">
-        <div className="flex-1 overflow-auto">
-          <RestaurantTable
-            restaurants={restaurants}
-            loading={loading}
-            selectedRestaurants={selectedRestaurants}
-            onToggleSelect={toggleSelect}
-            onToggleSelectAll={toggleSelectAll}
-            onView={openDetails}
-            onEdit={openEditModal}
-            onToggleStatus={handleToggleStatus}
-            onManageSubscription={handleManageSubscription}
-            onManageFeatures={handleManageFeatures}
-              onSendInvite={handleSendInvite}
-          />
-        </div>
+      <div className="flex-1 min-h-0 flex flex-col mb-5">
+        <RestaurantTable
+          restaurants={restaurants}
+          loading={loading}
+          selectedRestaurants={selectedRestaurants}
+          onToggleSelect={toggleSelect}
+          onToggleSelectAll={toggleSelectAll}
+          onView={openDetails}
+          onEdit={openEditModal}
+          onToggleStatus={handleToggleStatus}
+          onManageSubscription={handleManageSubscription}
+          onManageFeatures={handleManageFeatures}
+          onSendInvite={handleSendInvite}
+        />
       </div>
 
       {/* Pagination */}
