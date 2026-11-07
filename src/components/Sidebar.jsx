@@ -7,7 +7,6 @@ import {
   Package,
   CreditCard,
   QrCode,
-  FileText,
   Globe,
   Tag,
   ChevronLeft,
@@ -29,7 +28,6 @@ const navItems = [
   { label: "Sub. Packages", icon: Package, path: "/packages" },
   { label: "Subscriptions", icon: CreditCard, path: "/subscriptions" },
   { label: "QR Config", icon: QrCode, path: "/qr-config" },
-  { label: "CMS", icon: FileText, path: "/cms" },
   { label: "Platform Control", icon: Globe, path: "/platform-control" },
 ];
 
@@ -81,7 +79,7 @@ export default function Sidebar() {
         <button
           onClick={() => navigate("/profile")}
           title="Profile"
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-theme hover:bg-primary-light transition-colors"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-theme hover:bg-primary-light transition-colors cursor-pointer"
         >
           <User size={18} />
         </button>
@@ -89,7 +87,7 @@ export default function Sidebar() {
         <button
           onClick={() => navigate("/settings")}
           title="Settings"
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-theme hover:bg-primary-light transition-colors"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-theme hover:bg-primary-light transition-colors cursor-pointer"
         >
           <Settings size={18} />
         </button>
@@ -101,7 +99,7 @@ export default function Sidebar() {
             window.location.href = `${marketingWebUrl}/login`;
           }}
           title="Logout"
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-red-100 hover:text-red-500 transition-colors"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
         >
           <LogOut size={18} />
         </button>
@@ -110,7 +108,7 @@ export default function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-surface border border-theme flex items-center justify-center text-secondary hover:text-theme transition-colors z-10"
+        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-surface border border-theme flex items-center justify-center text-secondary hover:text-theme transition-colors z-10 cursor-pointer"
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>

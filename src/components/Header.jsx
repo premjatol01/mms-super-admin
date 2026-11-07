@@ -11,7 +11,6 @@ const ROUTE_TITLES = {
   "/features": { title: "Feature Management", desc: "Configure features and limits" },
   "/subscriptions": { title: "Subscriptions", desc: "Track active restaurant subscriptions" },
   "/qr-config": { title: "QR Configuration", desc: "Global QR code settings" },
-  "/cms": { title: "CMS", desc: "Content Management System" },
   "/platform-control": { title: "Platform Control", desc: "Global platform settings" },
   "/settings": { title: "Settings", desc: "System settings" },
   "/profile": { title: "Profile", desc: "Your super-admin profile" },
@@ -30,7 +29,7 @@ export default function Header() {
 
       <div className="flex items-center gap-2">
         {/* Notifications */}
-        <button className="relative w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-primary-light hover:text-theme transition-colors">
+        <button className="relative w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-primary-light hover:text-theme transition-colors cursor-pointer">
           <Bell size={18} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
         </button>
