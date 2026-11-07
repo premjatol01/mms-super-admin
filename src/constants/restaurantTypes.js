@@ -1,0 +1,17 @@
+export const restaurantTypes = [
+  "Fine Dining",
+  "Casual Dining",
+  "Quick Bites",
+  "Fast Food",
+  "Cafe",
+  "Hotel Restaurant",
+  "Food Truck",
+  "Bakery",
+  "Bar & Restaurant",
+  "Food Court",
+  "Cloud Kitchen",
+  "Dhaba",
+  "Other"
+];
+
+export const RESTAURANT_TYPES = restaurantTypes;

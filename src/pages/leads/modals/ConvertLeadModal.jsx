@@ -75,11 +75,15 @@ export default function ConvertLeadModal() {
     try {
       const submitData = new FormData();
       submitData.append('name', convertData.restaurantName);
-      submitData.append('description', '');
+      submitData.append('description', selectedLead?.notes || '');
+      submitData.append('shortDescription', selectedLead?.notes || '');
       submitData.append('phone', '');
       submitData.append('email', convertData.adminEmail || '');
       submitData.append('website', '');
       submitData.append('status', convertData.status);
+      if (selectedLead?.restaurantType) {
+        submitData.append('restaurantType', selectedLead.restaurantType);
+      }
       
       submitData.append('address', JSON.stringify({
         city: convertData.city || '', 
