@@ -1,31 +1,32 @@
-import { useMemo } from "react";
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
+import { useMemo, useEffect } from "react";
 import { usePackagesStore } from "../../store/packagesStore";
-import Button from "../../components/ui/Button";
 import PackageFilters from "./components/PackageFilters";
 import PackageTable from "./components/PackageTable";
 import Pagination from "../restaurants/components/Pagination";
-import AddEditPackageModal from "./modals/AddEditPackageModal";
 import PackageDetailsDrawer from "./modals/PackageDetailsDrawer";
 import ConfirmModal from "./modals/ConfirmModal";
 
 export default function PackagesPage() {
   const {
+    packages,
+    loading,
     filters,
     setFilter,
     resetFilters,
     pagination,
     setPage,
     setLimit,
-    openAddModal,
     openDetails,
-    openEditModal,
     showConfirm,
     getFilteredPackages,
+    fetchPackages,
   } = usePackagesStore();
 
-  const filteredPackages = useMemo(() => getFilteredPackages(), [filters, getFilteredPackages]);
+  useEffect(() => {
+    fetchPackages();
+  }, [fetchPackages]);
+
+  const filteredPackages = useMemo(() => getFilteredPackages(), [filters, getFilteredPackages, packages]);
   
   const paginatedPackages = useMemo(() => {
     const start = (pagination.page - 1) * pagination.limit;
@@ -44,32 +45,12 @@ export default function PackagesPage() {
     openDetails(pkg);
   };
 
-  const handleEditPackage = (pkg) => {
-    openEditModal(pkg);
-  };
-
   const handleToggleStatus = (pkg) => {
     showConfirm("toggleStatus", pkg);
   };
 
-  // Calculate feature counts
-  const featureCounts = useMemo(() => {
-    const counts = {};
-    filteredPackages.forEach(pkg => {
-      counts[pkg.id] = pkg.features?.length || 0;
-    });
-    return counts;
-  }, [filteredPackages]);
-
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
-        <Button onClick={openAddModal}>
-          <Plus size={16} /> Add Package
-        </Button>
-      </div>
-
       {/* Search & Filters */}
       <PackageFilters
         filters={filters}
@@ -81,8 +62,8 @@ export default function PackagesPage() {
       {/* Table */}
       <PackageTable
         packages={paginatedPackages}
+        loading={loading}
         onView={handleViewDetails}
-        onEdit={handleEditPackage}
         onToggleStatus={handleToggleStatus}
       />
 
@@ -94,8 +75,7 @@ export default function PackagesPage() {
         onLimitChange={setLimit}
       />
 
-      {/* Modals */}
-      <AddEditPackageModal />
+      {/* Modals & Drawers (Add & Edit package modals removed as packages are static) */}
       <PackageDetailsDrawer />
       <ConfirmModal />
     </div>

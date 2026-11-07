@@ -57,9 +57,39 @@ export const initialRestaurants = [
 ];
 
 export const subscriptionPackages = [
-  { value: "basic", label: "Basic", duration: 30, price: 999 },
-  { value: "standard", label: "Standard", duration: 90, price: 2499 },
-  { value: "premium", label: "Premium", duration: 365, price: 9999 },
+  { 
+    value: "Basic", 
+    label: "Basic", 
+    name: "Basic",
+    maxTables: 15,
+    pricing: [
+      { duration: "1_month", durationDays: 30, durationDisplay: "1 Month (30 Days)", price: 999 },
+      { duration: "6_months", durationDays: 180, durationDisplay: "6 Months (180 Days)", price: 4999 },
+      { duration: "12_months", durationDays: 365, durationDisplay: "12 Months / 1 Year", price: 8999, isPopular: true },
+    ]
+  },
+  { 
+    value: "Standard", 
+    label: "Standard", 
+    name: "Standard",
+    maxTables: 50,
+    pricing: [
+      { duration: "1_month", durationDays: 30, durationDisplay: "1 Month (30 Days)", price: 2499 },
+      { duration: "6_months", durationDays: 180, durationDisplay: "6 Months (180 Days)", price: 12499 },
+      { duration: "12_months", durationDays: 365, durationDisplay: "12 Months / 1 Year", price: 22999, isPopular: true },
+    ]
+  },
+  { 
+    value: "Premium", 
+    label: "Premium", 
+    name: "Premium",
+    maxTables: 150,
+    pricing: [
+      { duration: "1_month", durationDays: 30, durationDisplay: "1 Month (30 Days)", price: 4999 },
+      { duration: "6_months", durationDays: 180, durationDisplay: "6 Months (180 Days)", price: 24999 },
+      { duration: "12_months", durationDays: 365, durationDisplay: "12 Months / 1 Year", price: 44999, isPopular: true },
+    ]
+  },
 ];
 
 export const platformFeatures = [

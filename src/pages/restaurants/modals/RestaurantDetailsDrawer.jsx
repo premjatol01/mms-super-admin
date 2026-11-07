@@ -118,28 +118,36 @@ export default function RestaurantDetailsDrawer() {
           </FormSection>
 
           {/* Subscription */}
-          <FormSection title="Subscription">
+          <FormSection title="Subscription Details">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-secondary">Package</p>
-                <p className="text-sm font-medium text-theme">{selectedRestaurant.subscription?.package || "N/A"}</p>
+                <p className="text-xs text-secondary">Package Plan</p>
+                <p className="text-sm font-semibold text-theme">{selectedRestaurant.subscription?.packageName || selectedRestaurant.subscription?.package || "N/A"}</p>
               </div>
               <div>
                 <p className="text-xs text-secondary">Status</p>
                 <StatusBadge status={selectedRestaurant.subscription?.status} />
               </div>
+              <div>
+                <p className="text-xs text-secondary">Duration</p>
+                <p className="text-sm font-medium text-theme">{selectedRestaurant.subscription?.durationDisplay || selectedRestaurant.subscription?.duration || "-"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-secondary">Plan Price</p>
+                <p className="text-sm font-medium text-theme">{selectedRestaurant.subscription?.price ? `₹${selectedRestaurant.subscription.price.toLocaleString()}` : "-"}</p>
+              </div>
               <div className="flex items-center gap-2">
                 <Calendar size={14} className="text-secondary" />
                 <div>
                   <p className="text-xs text-secondary">Start Date</p>
-                  <p className="text-sm text-theme">{selectedRestaurant.subscription?.startDate || "N/A"}</p>
+                  <p className="text-sm text-theme">{formatDate(selectedRestaurant.subscription?.startDate)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar size={14} className="text-secondary" />
                 <div>
                   <p className="text-xs text-secondary">End Date</p>
-                  <p className="text-sm text-theme">{selectedRestaurant.subscription?.endDate || "N/A"}</p>
+                  <p className="text-sm text-theme">{formatDate(selectedRestaurant.subscription?.endDate)}</p>
                 </div>
               </div>
             </div>

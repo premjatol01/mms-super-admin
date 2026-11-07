@@ -103,14 +103,13 @@ export default function PackageFilters({
                 />
                 
                 <Select 
-                  label="Duration" 
+                  label="Available Duration" 
                   value={filters.duration} 
                   onChange={(v) => onFilterChange("duration", v)} 
                   options={[
-                    { value: "30_days", label: "30 Days" },
-                    { value: "3_months", label: "3 Months" },
-                    { value: "6_months", label: "6 Months" },
-                    { value: "1_year", label: "1 Year" },
+                    { value: "1_month", label: "1 Month (30 Days)" },
+                    { value: "6_months", label: "6 Months (180 Days)" },
+                    { value: "12_months", label: "12 Months / 1 Year" },
                   ]} 
                   placeholder="All Durations" 
                 />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRestaurantsStore, subscriptionPackages } from "../../../store/restaurantsStore";
+import { packagesAPI } from "../../../api/packages";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
 import FormSection from "../../../components/ui/FormSection";
@@ -8,6 +9,16 @@ import Input from "../../../components/ui/Input";
 import Textarea from "../../../components/ui/Textarea";
 import Select from "../../../components/ui/Select";
 import ImageUploader from "../../../components/ui/ImageUploader";
+import { Calendar, Users, CheckCircle2 } from "lucide-react";
+
+const normalizeDuration = (dur) => {
+  if (!dur) return "1_month";
+  if (dur === "30" || dur === "30_days") return "1_month";
+  if (dur === "90" || dur === "90_days" || dur === "3_months") return "6_months";
+  if (dur === "180" || dur === "180_days") return "6_months";
+  if (dur === "365" || dur === "1_year" || dur === "12_months") return "12_months";
+  return dur;
+};
 
 const getInitialFormData = (restaurant = null) => ({
   name: restaurant?.name || "",
@@ -24,14 +35,14 @@ const getInitialFormData = (restaurant = null) => ({
   adminName: restaurant?.admin?.name || "",
   adminEmail: restaurant?.admin?.email || "",
   adminPhone: restaurant?.admin?.phone || "",
-  package: restaurant?.subscription?.package || "",
-  duration: "30",
-  startDate: restaurant?.subscription?.startDate || "",
+  package: restaurant?.subscription?.packageName || restaurant?.subscription?.package || "Basic",
+  duration: normalizeDuration(restaurant?.subscription?.duration),
+  startDate: restaurant?.subscription?.startDate ? new Date(restaurant.subscription.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   status: restaurant?.status || "active",
 });
 
 function calculateEndDate(start, days) {
-  if (!start) return null;
+  if (!start || !days) return null;
   const date = new Date(start);
   date.setDate(date.getDate() + parseInt(days));
   return date.toISOString().split('T')[0];
@@ -42,6 +53,16 @@ export default function AddEditRestaurantModal() {
   const isEdit = !!editingRestaurant;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(getInitialFormData());
+  const [availablePackages, setAvailablePackages] = useState([]);
+
+  useEffect(() => {
+    packagesAPI.getPackages({ status: 'active' })
+      .then(res => {
+        const pkgs = res.data?.data || res.data || [];
+        setAvailablePackages(pkgs);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (showAddModal) {
@@ -50,6 +71,38 @@ export default function AddEditRestaurantModal() {
   }, [showAddModal, editingRestaurant]);
 
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const effectivePackages = availablePackages.length > 0 ? availablePackages : subscriptionPackages;
+  const selectedPkg = effectivePackages.find(p => (p.name || p.label)?.toLowerCase() === (formData.package || '').toLowerCase()) || effectivePackages[0];
+
+  const durationOptions = (selectedPkg?.pricing && selectedPkg.pricing.length > 0)
+    ? selectedPkg.pricing.map(item => ({
+        value: item.duration,
+        label: `${item.durationDisplay} — ₹${item.price.toLocaleString()}${item.isPopular ? ' ★ (Best Value)' : ''}`,
+        days: item.durationDays,
+        price: item.price,
+        display: item.durationDisplay,
+        isPopular: item.isPopular
+      }))
+    : [
+        { value: "1_month", label: "1 Month (30 Days) — ₹999", days: 30, price: 999, display: "1 Month (30 Days)" },
+        { value: "6_months", label: "6 Months (180 Days) — ₹4,999", days: 180, price: 4999, display: "6 Months (180 Days)" },
+        { value: "12_months", label: "12 Months / 1 Year (365 Days) — ₹8,999 ★ (Best Value)", days: 365, price: 8999, display: "12 Months / 1 Year", isPopular: true },
+      ];
+
+  const currentDurationTier = durationOptions.find(d => d.value === formData.duration) || durationOptions[0];
+  const calculatedEndDate = calculateEndDate(formData.startDate, currentDurationTier?.days || 30);
+
+  const handlePackageChange = (val) => {
+    const newPkg = effectivePackages.find(p => (p.name || p.label)?.toLowerCase() === (val || '').toLowerCase());
+    const hasCurrentDuration = newPkg?.pricing?.some(pr => pr.duration === formData.duration);
+    const newDuration = hasCurrentDuration ? formData.duration : (newPkg?.pricing?.[0]?.duration || "1_month");
+    setFormData(prev => ({
+      ...prev,
+      package: val,
+      duration: newDuration
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,10 +154,16 @@ export default function AddEditRestaurantModal() {
       }));
       
       submitData.append('subscription', JSON.stringify({
-        package: formData.package, 
+        packageId: selectedPkg?._id || null,
+        packageName: selectedPkg?.name || selectedPkg?.label || formData.package,
+        package: selectedPkg?.name || selectedPkg?.label || formData.package, 
+        duration: currentDurationTier?.value || formData.duration,
+        durationDays: currentDurationTier?.days || 30,
+        durationDisplay: currentDurationTier?.display || `${currentDurationTier?.days || 30} Days`,
+        price: currentDurationTier?.price || 0,
         status: formData.package ? "active" : "pending", 
         startDate: formData.startDate || null, 
-        endDate: formData.startDate ? calculateEndDate(formData.startDate, formData.duration) : null 
+        endDate: calculatedEndDate || null 
       }));
       
       if (formData.logoFile) {
@@ -128,6 +187,15 @@ export default function AddEditRestaurantModal() {
   };
 
   if (!showAddModal) return null;
+
+  const packageOptions = effectivePackages.map(p => {
+    const name = p.name || p.label;
+    const tables = p.maxTables || 15;
+    return {
+      value: name,
+      label: `${name} Plan (${tables} Tables Max)`
+    };
+  });
 
   return (
     <Modal isOpen={showAddModal} onClose={closeAddModal} title={isEdit ? "Edit Restaurant" : "Add Restaurant"} size="lg">
@@ -160,53 +228,53 @@ export default function AddEditRestaurantModal() {
               label="Description" 
               value={formData.description} 
               onChange={(e) => handleChange("description", e.target.value)} 
-              placeholder="Describe your restaurant" 
-              rows={3} 
+              placeholder="Brief description about the restaurant"
+              rows={3}
             />
           </div>
         </FormSection>
 
-        <FormSection title="Address Information">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormSection title="Address Details">
+          <div className="space-y-4">
             <Input 
-              label="Street Address" 
-              maxLength={200}
+              label="Full Address" 
               value={formData.address} 
               onChange={(e) => handleChange("address", e.target.value)} 
-              placeholder="123 Main Street" 
+              placeholder="Street address, locality, landmark" 
             />
-            <Input 
-              label="City" 
-              required 
-              value={formData.city} 
-              onChange={(e) => handleChange("city", e.target.value)} 
-              placeholder="Mumbai" 
-            />
-            <Input 
-              label="State" 
-              value={formData.state} 
-              onChange={(e) => handleChange("state", e.target.value)} 
-              placeholder="Maharashtra" 
-            />
-            <Input 
-              label="Country" 
-              value={formData.country} 
-              onChange={(e) => handleChange("country", e.target.value)} 
-              placeholder="India" 
-            />
-            <Input 
-              label="Pincode" 
-              maxLength={6}
-              pattern="[0-9]{6}"
-              value={formData.pincode} 
-              onChange={(e) => handleChange("pincode", e.target.value.replace(/\D/g, ''))} 
-              placeholder="400001" 
-            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Input 
+                label="City" 
+                required 
+                value={formData.city} 
+                onChange={(e) => handleChange("city", e.target.value)} 
+                placeholder="City" 
+              />
+              <Input 
+                label="State" 
+                value={formData.state} 
+                onChange={(e) => handleChange("state", e.target.value)} 
+                placeholder="State" 
+              />
+              <Input 
+                label="Country" 
+                value={formData.country} 
+                onChange={(e) => handleChange("country", e.target.value)} 
+                placeholder="Country" 
+              />
+              <Input 
+                label="Pincode" 
+                maxLength={6}
+                value={formData.pincode} 
+                onChange={(e) => handleChange("pincode", e.target.value.replace(/\D/g, ''))} 
+                placeholder="6-digit PIN" 
+              />
+            </div>
           </div>
         </FormSection>
 
         <FormSection title="Contact Information">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-theme mb-1.5">Restaurant Phone</label>
               <div className="flex relative">
@@ -225,7 +293,7 @@ export default function AddEditRestaurantModal() {
               </div>
             </div>
             <Input 
-              label="Restaurant Email" 
+              label="Email" 
               type="email" 
               value={formData.email} 
               onChange={(e) => handleChange("email", e.target.value)} 
@@ -278,17 +346,31 @@ export default function AddEditRestaurantModal() {
           </div>
         </FormSection>
 
-        <FormSection title="Subscription">
+        <FormSection title="Subscription Package" description="Select static package tier and duration">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select 
-              label="Package" 
+              label="Package Tier" 
               value={formData.package} 
-              onChange={(v) => handleChange("package", v)} 
-              options={subscriptionPackages.map(p => ({ value: p.label, label: `${p.label} (₹${p.price})` }))}
+              onChange={handlePackageChange} 
+              options={packageOptions}
               placeholder="Select package"
             />
             <Select 
-              label="Status" 
+              label="Subscription Duration" 
+              value={formData.duration} 
+              onChange={(v) => handleChange("duration", v)} 
+              options={durationOptions}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <Input 
+              label="Start Date" 
+              type="date" 
+              value={formData.startDate} 
+              onChange={(e) => handleChange("startDate", e.target.value)} 
+            />
+            <Select 
+              label="Restaurant Status" 
               value={formData.status} 
               onChange={(v) => handleChange("status", v)} 
               options={[
@@ -296,6 +378,38 @@ export default function AddEditRestaurantModal() {
                 { value: "inactive", label: "Inactive" },
               ]} 
             />
+          </div>
+
+          {/* Pricing & Duration Summary Card */}
+          <div className="mt-4 p-4 rounded-xl border border-theme bg-primary-light/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-theme text-base">
+                  {selectedPkg?.name || selectedPkg?.label || formData.package} Plan
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                  <Users size={12} />
+                  Up to {selectedPkg?.maxTables || 15} Tables
+                </span>
+                {currentDurationTier?.isPopular && (
+                  <span className="text-[10px] bg-amber-500 text-white font-bold rounded px-1.5 py-0.5 uppercase tracking-wider">
+                    Best Value
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-secondary flex items-center gap-1.5">
+                <Calendar size={13} className="text-primary" />
+                Duration: <span className="font-medium text-theme">{currentDurationTier?.display}</span> ({currentDurationTier?.days} Days)
+              </p>
+            </div>
+            <div className="sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-theme">
+              <div className="text-xl font-extrabold text-theme">
+                ₹{currentDurationTier?.price ? currentDurationTier.price.toLocaleString() : '0'}
+              </div>
+              <p className="text-xs text-secondary">
+                Valid until: <span className="font-semibold text-theme">{calculatedEndDate || 'N/A'}</span>
+              </p>
+            </div>
           </div>
         </FormSection>
 
