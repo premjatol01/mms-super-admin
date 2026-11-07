@@ -3,13 +3,14 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { Palette, ExternalLink } from "lucide-react";
 import { useDesignRequestStore } from "../../store/designRequestStore";
+import Select from "../../components/ui/Select";
 
-const STATUS_LABELS = {
-  pending: { label: "Pending", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  in_progress: { label: "In Progress", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  completed: { label: "Completed", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-  rejected: { label: "Rejected", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-};
+const STATUS_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "completed", label: "Completed" },
+  { value: "rejected", label: "Rejected" },
+];
 
 export default function DesignRequestsPage() {
   const { requests, loading, fetchRequests, updateStatus } = useDesignRequestStore();
@@ -20,6 +21,7 @@ export default function DesignRequestsPage() {
   }, [fetchRequests]);
 
   const handleStatusChange = async (id, status) => {
+    if (!status) return;
     setUpdatingId(id);
     try {
       await updateStatus(id, status);
@@ -41,41 +43,39 @@ export default function DesignRequestsPage() {
                 <th className="px-6 py-3.5 font-medium">Restaurant</th>
                 <th className="px-6 py-3.5 font-medium">Description</th>
                 <th className="px-6 py-3.5 font-medium">Attachment</th>
-                <th className="px-6 py-3.5 font-medium">Date</th>
+                <th className="px-6 py-3.5 font-medium">Requested On</th>
                 <th className="px-6 py-3.5 font-medium">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-theme">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-secondary">
-                    <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
-                    <p className="text-sm">Loading design requests...</p>
+                  <td colSpan={5} className="px-6 py-12 text-center text-secondary">
+                    Loading requests...
                   </td>
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-16 text-center text-secondary">
-                    <Palette className="mx-auto h-12 w-12 text-secondary/30 mb-3" />
-                    <p>No design requests found.</p>
+                  <td colSpan={5} className="px-6 py-12 text-center text-secondary">
+                    <Palette size={32} className="mx-auto mb-2 text-secondary opacity-40" />
+                    No design requests found.
                   </td>
                 </tr>
               ) : (
                 requests.map((req) => (
-                  <tr key={req.id} className="hover:bg-primary-light/10 transition-colors group">
-                    <td className="px-6 py-3.5">
-                      <p className="font-semibold text-theme">{req.restaurantId?.restaurantName || "Unknown"}</p>
-                      <p className="text-xs text-secondary">{req.restaurantId?.email}</p>
+                  <tr key={req.id} className="hover:bg-primary-light/10 transition-colors">
+                    <td className="px-6 py-3.5 font-medium text-theme">
+                      {req.restaurant?.name || "Unknown Restaurant"}
                     </td>
-                    <td className="px-6 py-3.5 max-w-md">
-                      <p className="text-theme whitespace-pre-wrap">{req.description}</p>
+                    <td className="px-6 py-3.5 text-secondary max-w-xs truncate" title={req.description}>
+                      {req.description}
                     </td>
                     <td className="px-6 py-3.5">
-                      {req.attachment?.url ? (
+                      {req.attachment ? (
                         <a
-                          href={req.attachment.url}
+                          href={req.attachment}
                           target="_blank"
-                          rel="noopener noreferrer"
+                          rel="noreferrer"
                           className="inline-flex items-center gap-1.5 text-primary hover:underline text-xs font-medium"
                         >
                           <ExternalLink size={14} /> View File
@@ -88,19 +88,13 @@ export default function DesignRequestsPage() {
                       {format(new Date(req.createdAt), "d MMM yyyy")}
                     </td>
                     <td className="px-6 py-3.5">
-                      <select
+                      <Select
                         value={req.status}
-                        onChange={(e) => handleStatusChange(req.id, e.target.value)}
+                        onChange={(val) => handleStatusChange(req.id, val)}
                         disabled={updatingId === req.id}
-                        className={`text-xs px-2.5 py-1.5 rounded-lg font-medium border border-theme outline-none cursor-pointer disabled:opacity-50 ${
-                          STATUS_LABELS[req.status]?.className || "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
+                        options={STATUS_OPTIONS}
+                        className="w-36"
+                      />
                     </td>
                   </tr>
                 ))

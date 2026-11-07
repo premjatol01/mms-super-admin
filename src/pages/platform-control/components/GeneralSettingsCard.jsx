@@ -47,6 +47,7 @@ export default function GeneralSettingsCard({ register, errors, editing, values,
           id="platformStatus"
           label="Platform Status"
           editing={editing}
+          value={values.platformStatus}
           options={PLATFORM_STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
           {...register('platformStatus')}
         />

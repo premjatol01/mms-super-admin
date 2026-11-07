@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Eye, Save } from "lucide-react";
 import StatusBadge from "./StatusBadge.jsx";
+import Select from "../../../components/ui/Select";
 
 const inputClass =
   "w-full rounded-lg border border-theme bg-surface px-3 py-2 text-sm text-theme outline-none focus:border-primary";
@@ -34,38 +35,46 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
 
   return (
     <div className="space-y-6">
-      {/* Hero Section */}
+      {/* Hero section */}
       <div className="rounded-xl border border-theme bg-surface">
         <div className="flex items-center justify-between border-b border-theme px-4 py-3">
           <div>
             <h3 className="text-sm font-medium text-theme">Hero section</h3>
-            <p className="text-xs text-secondary">The first thing visitors see on the homepage.</p>
+            <p className="text-xs text-secondary">
+              The top banner visitors see when they land on the homepage.
+            </p>
           </div>
           <StatusBadge status={hero.status} />
         </div>
         <div className="space-y-4 px-4 py-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelClass}>Hero heading</label>
-              <input
-                className={inputClass}
-                value={hero.heading}
-                onChange={(e) => updateHero({ heading: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Hero subheading</label>
-              <input
-                className={inputClass}
-                value={hero.subheading}
-                onChange={(e) => updateHero({ subheading: e.target.value })}
-              />
-            </div>
+          <div>
+            <label className={labelClass}>Tagline</label>
+            <input
+              className={inputClass}
+              value={hero.tagline}
+              onChange={(e) => updateHero({ tagline: e.target.value })}
+            />
           </div>
           <div>
-            <label className={labelClass}>Hero description</label>
+            <label className={labelClass}>Subtagline</label>
+            <input
+              className={inputClass}
+              value={hero.subtagline}
+              onChange={(e) => updateHero({ subtagline: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Heading</label>
+            <input
+              className={inputClass}
+              value={hero.heading}
+              onChange={(e) => updateHero({ heading: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Description</label>
             <textarea
-              rows={2}
+              rows={3}
               className={inputClass}
               value={hero.description}
               onChange={(e) => updateHero({ description: e.target.value })}
@@ -73,7 +82,7 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass}>Primary button text</label>
+              <label className={labelClass}>Primary button label</label>
               <input
                 className={inputClass}
                 value={hero.primaryButtonText}
@@ -81,7 +90,7 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
               />
             </div>
             <div>
-              <label className={labelClass}>Primary button link</label>
+              <label className={labelClass}>Primary button target URL</label>
               <input
                 className={inputClass}
                 value={hero.primaryButtonLink}
@@ -89,7 +98,7 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
               />
             </div>
             <div>
-              <label className={labelClass}>Secondary button text</label>
+              <label className={labelClass}>Secondary button label</label>
               <input
                 className={inputClass}
                 value={hero.secondaryButtonText}
@@ -97,7 +106,7 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
               />
             </div>
             <div>
-              <label className={labelClass}>Secondary button link</label>
+              <label className={labelClass}>Secondary button target URL</label>
               <input
                 className={inputClass}
                 value={hero.secondaryButtonLink}
@@ -115,15 +124,15 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
             />
           </div>
           <div className="sm:w-48">
-            <label className={labelClass}>Status</label>
-            <select
-              className={inputClass}
+            <Select
+              label="Status"
               value={hero.status}
-              onChange={(e) => updateHero({ status: e.target.value })}
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
+              onChange={(val) => updateHero({ status: val })}
+              options={[
+                { value: "draft", label: "Draft" },
+                { value: "published", label: "Published" },
+              ]}
+            />
           </div>
         </div>
       </div>
@@ -194,7 +203,7 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
       <div className="flex justify-end gap-2">
         <button
           onClick={() => onPreview({ hero, general })}
-          className="inline-flex items-center gap-2 rounded-lg border border-theme px-3.5 py-2 text-sm font-medium text-theme hover:bg-black/[0.03]"
+          className="inline-flex items-center gap-2 rounded-lg border border-theme px-3.5 py-2 text-sm font-medium text-theme hover:bg-black/[0.03] cursor-pointer"
         >
           <Eye className="h-4 w-4" />
           Preview
@@ -202,7 +211,7 @@ export default function StaticContentTab({ staticContent, onSave, onPreview }) {
         <button
           disabled={!dirty}
           onClick={handleSave}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 cursor-pointer"
         >
           <Save className="h-4 w-4" />
           Save changes

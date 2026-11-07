@@ -1,4 +1,5 @@
 import { Search, X } from "lucide-react";
+import Select from "../../../components/ui/Select";
 
 export function SearchBar({ value, onChange, placeholder = "Search content..." }) {
   return (
@@ -23,20 +24,20 @@ export function SearchBar({ value, onChange, placeholder = "Search content..." }
 }
 
 export function FilterDropdown({ label, value, options, onChange }) {
+  const formattedOptions = options.map((opt) => ({
+    value: opt,
+    label: opt,
+  }));
+
   return (
-    <label className="flex items-center gap-2 text-sm text-secondary">
-      {label && <span className="hidden sm:inline">{label}</span>}
-      <select
+    <div className="flex items-center gap-2 text-sm text-secondary">
+      {label && <span className="hidden sm:inline font-medium text-theme">{label}</span>}
+      <Select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-theme bg-surface px-2.5 py-2 text-sm text-theme outline-none focus:border-primary"
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-    </label>
+        onChange={onChange}
+        options={formattedOptions}
+        className="w-36"
+      />
+    </div>
   );
 }
