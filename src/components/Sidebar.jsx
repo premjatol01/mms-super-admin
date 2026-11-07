@@ -42,15 +42,44 @@ export default function Sidebar() {
         collapsed ? "w-16" : "w-64"
       }`}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-theme overflow-hidden">
-        <div className="w-8 h-8 rounded-lg bg-primary flex-shrink-0 flex items-center justify-center text-white font-bold text-sm">
-          SA
+      {/* Sidebar Header (Matches main Header h-16) */}
+      {collapsed ? (
+        <div className="h-16 shrink-0 flex items-center justify-center border-b border-theme px-2">
+          <div
+            className="relative w-8 h-8 group flex items-center justify-center cursor-pointer"
+            onClick={() => setCollapsed(false)}
+            title="Expand sidebar"
+            aria-label="Expand sidebar"
+          >
+            {/* Logo shown normally, hidden on hover */}
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm shadow-xs transition-opacity duration-200 group-hover:opacity-0">
+              SA
+            </div>
+            {/* Expand button appears on hover */}
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary-light text-primary border border-theme opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-xs hover:bg-primary hover:text-white">
+              <ChevronRight size={18} />
+            </div>
+          </div>
         </div>
-        {!collapsed && (
-          <span className="font-semibold text-theme text-sm truncate">Super Admin</span>
-        )}
-      </div>
+      ) : (
+        <div className="h-16 shrink-0 flex items-center justify-between px-4 border-b border-theme">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-xs">
+              SA
+            </div>
+            <span className="font-semibold text-theme text-sm truncate">Super Admin</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+            className="p-1.5 rounded-lg text-secondary hover:text-theme hover:bg-primary-light transition-colors cursor-pointer shrink-0"
+          >
+            <ChevronLeft size={18} />
+          </button>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
@@ -104,14 +133,6 @@ export default function Sidebar() {
           <LogOut size={18} />
         </button>
       </div>
-
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-surface border border-theme flex items-center justify-center text-secondary hover:text-theme transition-colors z-10 cursor-pointer"
-      >
-        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-      </button>
     </aside>
   );
 }
