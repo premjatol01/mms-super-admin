@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Eye, Power, Users, Layers, Calendar, Tag } from "lucide-react";
+import { useState, useRef } from "react";
+import { Eye, Power, Users, Layers } from "lucide-react";
 
 export default function PackageTable({ 
   packages, 
@@ -14,12 +14,21 @@ export default function PackageTable({
     return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  if (!loading && packages.length === 0) {
+  if (loading) {
     return (
-      <div className="bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-12 text-center">
+        <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-sm text-secondary">Loading packages...</p>
+      </div>
+    );
+  }
+
+  if (packages.length === 0) {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-primary-light/20 border-b border-theme">
+            <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
               <tr>
                 <th className="px-5 py-3.5 text-left text-sm font-medium text-theme w-48">Package</th>
                 <th className="px-4 py-3.5 text-left text-sm font-medium text-theme w-32">Table Limit</th>
@@ -32,7 +41,7 @@ export default function PackageTable({
             </thead>
             <tbody>
               <tr>
-                <td colSpan={7} className="px-4 py-16 text-center text-secondary">
+                <td colSpan={7} className="px-4 py-24 text-center text-secondary">
                   No packages found
                 </td>
               </tr>
@@ -44,10 +53,10 @@ export default function PackageTable({
   }
 
   return (
-    <div className="bg-surface border border-theme rounded-xl overflow-hidden shadow-sm" ref={containerRef}>
-      <div className="overflow-x-auto">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden" ref={containerRef}>
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-primary-light/20 border-b border-theme">
+          <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
             <tr>
               <th className="px-5 py-3.5 text-left text-sm font-medium text-theme w-48">Package</th>
               <th className="px-4 py-3.5 text-left text-sm font-medium text-theme w-32">Table Limit</th>

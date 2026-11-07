@@ -1,6 +1,6 @@
 import { X, RefreshCw, Package, Power, Calendar, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useSubscriptionsStore } from "../../../store/subscriptionsStore";
-import { getFeaturesByPackageName } from "../data/featureHelper";
+import { getFeaturesByPackageName, getFeaturesByIds } from "../data/featureHelper";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
 
@@ -9,14 +9,16 @@ export default function SubscriptionDetailsDrawer() {
     showDetailsDrawer, 
     selectedSubscription, 
     closeDetails,
-    openRenewModal,
+    openRenewModal, 
     openChangePackageModal, 
     showConfirm 
   } = useSubscriptionsStore();
 
   if (!showDetailsDrawer || !selectedSubscription) return null;
 
-  const features = getFeaturesByPackageName(selectedSubscription.packageName);
+  const features = (selectedSubscription.features && selectedSubscription.features.length > 0)
+    ? getFeaturesByIds(selectedSubscription.features)
+    : getFeaturesByPackageName(selectedSubscription.packageName);
   
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
@@ -55,18 +57,18 @@ export default function SubscriptionDetailsDrawer() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-xl font-bold text-theme">{selectedSubscription.restaurantName}</h3>
-                <p className="text-sm text-secondary mt-1">ID: {selectedSubscription.id}</p>
+                <p className="text-sm text-secondary mt-1">ID: {selectedSubscription._id || selectedSubscription.id}</p>
               </div>
               <StatusBadge status={selectedSubscription.status} />
             </div>
             <div className="mt-4 pt-4 border-t border-theme grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-secondary">Admin Name</p>
-                <p className="text-sm font-medium text-theme">{selectedSubscription.adminName}</p>
+                <p className="text-sm font-medium text-theme">{selectedSubscription.adminName || "N/A"}</p>
               </div>
               <div>
                 <p className="text-xs text-secondary">Admin Email</p>
-                <p className="text-sm font-medium text-theme">{selectedSubscription.adminEmail}</p>
+                <p className="text-sm font-medium text-theme">{selectedSubscription.adminEmail || "N/A"}</p>
               </div>
             </div>
           </div>
@@ -124,7 +126,7 @@ export default function SubscriptionDetailsDrawer() {
               </div>
               <div>
                 <p className="text-xs text-secondary">Duration</p>
-                <p className="text-sm font-medium text-theme">{selectedSubscription.durationDisplay}</p>
+                <p className="text-sm font-medium text-theme">{selectedSubscription.durationDisplay || `${selectedSubscription.duration} Days`}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar size={14} className="text-secondary" />

@@ -1,8 +1,6 @@
 import { useMemo, useEffect } from "react";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useLeadsStore } from "../../store/leadsStore";
-import Button from "../../components/ui/Button";
 import LeadFilters from "./components/LeadFilters";
 import LeadKanbanBoard from "./components/LeadKanbanBoard";
 import AddEditLeadModal from "./modals/AddEditLeadModal";
@@ -15,6 +13,7 @@ export default function LeadsPage() {
     leads,
     filters,
     setFilter,
+    setFilters,
     resetFilters,
     openAddModal,
     openDetails,
@@ -68,12 +67,13 @@ export default function LeadsPage() {
   }, [filteredLeads]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-7rem)] overflow-hidden">
       {/* Search & Filters */}
-      <div className="flex-none mb-5">
+      <div className="flex-none mb-4">
         <LeadFilters
           filters={filters}
           onFilterChange={handleFilterChange}
+          onApplyFilters={setFilters}
           onResetFilters={handleResetFilters}
           leadCount={filteredLeads.length}
           cities={cities}
@@ -81,8 +81,8 @@ export default function LeadsPage() {
         />
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 min-h-0 overflow-hidden bg-surface border border-theme rounded-xl p-4">
+      {/* Main Kanban Board Container (occupies 100% of rest area) */}
+      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl p-4 overflow-hidden shadow-sm">
         <LeadKanbanBoard
           leads={filteredLeads}
           onView={handleViewDetails}

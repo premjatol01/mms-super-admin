@@ -12,6 +12,7 @@ export default function PackagesPage() {
     loading,
     filters,
     setFilter,
+    setFilters,
     resetFilters,
     pagination,
     setPage,
@@ -50,32 +51,38 @@ export default function PackagesPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
       {/* Search & Filters */}
-      <PackageFilters
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={handleResetFilters}
-        packageCount={filteredPackages.length}
-      />
+      <div className="flex-none mb-4">
+        <PackageFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onApplyFilters={setFilters}
+          onResetFilters={handleResetFilters}
+          packageCount={filteredPackages.length}
+        />
+      </div>
 
-      {/* Table */}
-      <PackageTable
-        packages={paginatedPackages}
-        loading={loading}
-        onView={handleViewDetails}
-        onToggleStatus={handleToggleStatus}
-      />
+      {/* Table & Bottom Pinned Pagination Card */}
+      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
+        <PackageTable
+          packages={paginatedPackages}
+          loading={loading}
+          onView={handleViewDetails}
+          onToggleStatus={handleToggleStatus}
+        />
 
-      {/* Pagination */}
-      <Pagination
-        pagination={pagination}
-        totalItems={filteredPackages.length}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-      />
+        {/* Pinned Pagination at Bottom */}
+        <Pagination
+          pagination={pagination}
+          totalItems={filteredPackages.length}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+          itemName="packages"
+        />
+      </div>
 
-      {/* Modals & Drawers (Add & Edit package modals removed as packages are static) */}
+      {/* Modals & Drawers */}
       <PackageDetailsDrawer />
       <ConfirmModal />
     </div>

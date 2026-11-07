@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import SearchInput from "../../components/ui/SearchInput";
 import Modal from "../../components/ui/Modal";
 import Select from "../../components/ui/Select";
 import ImageUploader from "../../components/ui/ImageUploader";
+import Pagination from "../restaurants/components/Pagination";
 import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
 import { masterMenuAPI } from "../../api/masterMenu";
 import { toast } from "sonner";
 
 export default function MasterMenuPage() {
   const [activeTab, setActiveTab] = useState("categories");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -19,6 +21,10 @@ export default function MasterMenuPage() {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Pagination states
+  const [categoryPagination, setCategoryPagination] = useState({ page: 1, limit: 10 });
+  const [itemPagination, setItemPagination] = useState({ page: 1, limit: 10 });
 
   // Form State
   const [formData, setFormData] = useState({});
@@ -42,6 +48,50 @@ export default function MasterMenuPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchQuery("");
+  };
+
+  const handleSearchChange = (val) => {
+    setSearchQuery(val);
+    if (activeTab === "categories") {
+      setCategoryPagination(prev => ({ ...prev, page: 1 }));
+    } else {
+      setItemPagination(prev => ({ ...prev, page: 1 }));
+    }
+  };
+
+  // Filtered & Paginated Categories
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+    const q = searchQuery.toLowerCase();
+    return categories.filter(c => 
+      c.name?.toLowerCase().includes(q) || 
+      c.description?.toLowerCase().includes(q)
+    );
+  }, [categories, searchQuery]);
+
+  const paginatedCategories = useMemo(() => {
+    const start = (categoryPagination.page - 1) * categoryPagination.limit;
+    return filteredCategories.slice(start, start + categoryPagination.limit);
+  }, [filteredCategories, categoryPagination]);
+
+  // Filtered & Paginated Items
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(item => 
+      item.name?.toLowerCase().includes(q) || 
+      item.categoryId?.name?.toLowerCase().includes(q)
+    );
+  }, [items, searchQuery]);
+
+  const paginatedItems = useMemo(() => {
+    const start = (itemPagination.page - 1) * itemPagination.limit;
+    return filteredItems.slice(start, start + itemPagination.limit);
+  }, [filteredItems, itemPagination]);
 
   const handleAdd = () => {
     setSelectedItem(null);
@@ -129,55 +179,98 @@ export default function MasterMenuPage() {
   const activeCategories = categories.filter(c => c.status === 'active' || !c.status);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button onClick={handleAdd}>
-          <Plus size={18} />
-          Add {activeTab === "categories" ? "Category" : "Menu Item"}
-        </Button>
-      </div>
-
-      <div className="bg-white dark:bg-[var(--color-surface)] border border-theme rounded-xl overflow-hidden">
-        <div className="border-b border-theme flex">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      {/* Master Menu Card */}
+      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
+        {/* Tabs Bar */}
+        <div className="flex-none border-b border-theme flex bg-surface">
           <button
-            onClick={() => setActiveTab("categories")}
-            className={`px-6 py-3 text-sm font-medium transition-colors ${
+            onClick={() => handleTabChange("categories")}
+            className={`px-6 py-3.5 text-sm font-medium transition-colors cursor-pointer flex items-center gap-2 ${
               activeTab === "categories"
                 ? "border-b-2 border-primary text-primary"
                 : "text-secondary hover:text-theme"
             }`}
           >
-            Categories
+            <span>Categories</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              activeTab === "categories" ? "bg-primary-light/50 text-primary font-semibold" : "bg-primary-light/20 text-secondary"
+            }`}>
+              {categories.length}
+            </span>
           </button>
           <button
-            onClick={() => setActiveTab("items")}
-            className={`px-6 py-3 text-sm font-medium transition-colors ${
+            onClick={() => handleTabChange("items")}
+            className={`px-6 py-3.5 text-sm font-medium transition-colors cursor-pointer flex items-center gap-2 ${
               activeTab === "items"
                 ? "border-b-2 border-primary text-primary"
                 : "text-secondary hover:text-theme"
             }`}
           >
-            Menu Items
+            <span>Menu Items</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              activeTab === "items" ? "bg-primary-light/50 text-primary font-semibold" : "bg-primary-light/20 text-secondary"
+            }`}>
+              {items.length}
+            </span>
           </button>
         </div>
 
-        <div className="p-4 border-b border-theme flex justify-between items-center bg-gray-50 dark:bg-[var(--color-background)]">
-          <div className="w-72">
-            <SearchInput placeholder={`Search ${activeTab}...`} />
+        {/* Search & Add Button Bar (Add button moved close to Search Input) */}
+        <div className="flex-none p-4 border-b border-theme flex flex-wrap items-center justify-between gap-3 bg-surface">
+          <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+            <div className="w-72">
+              <SearchInput 
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder={`Search ${activeTab === "categories" ? "categories" : "menu items"}...`} 
+              />
+            </div>
+            <Button onClick={handleAdd} className="flex items-center gap-1.5 whitespace-nowrap">
+              <Plus size={18} />
+              Add {activeTab === "categories" ? "Category" : "Menu Item"}
+            </Button>
+          </div>
+
+          <div className="text-xs text-secondary font-medium">
+            Showing <span className="text-theme font-semibold">{activeTab === "categories" ? filteredCategories.length : filteredItems.length}</span> {activeTab === "categories" ? "categories" : "menu items"}
           </div>
         </div>
 
-        <div className="overflow-x-auto min-h-[300px] relative">
+        {/* Table Scroll Area with Sticky Thead */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto relative">
           {isLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="animate-spin text-primary" size={32} />
+            <div className="flex-1 min-h-[300px] flex flex-col items-center justify-center p-12 text-center">
+              <Loader2 className="animate-spin text-primary mb-3" size={32} />
+              <p className="text-sm text-secondary">Loading {activeTab === "categories" ? "categories" : "menu items"}...</p>
             </div>
           ) : activeTab === "categories" ? (
-            <CategoriesTable categories={categories} onEdit={handleEdit} onDelete={handleDelete} />
+            <CategoriesTable categories={paginatedCategories} onEdit={handleEdit} onDelete={handleDelete} />
           ) : (
-            <ItemsTable items={items} onEdit={handleEdit} onDelete={handleDelete} />
+            <ItemsTable items={paginatedItems} onEdit={handleEdit} onDelete={handleDelete} />
           )}
         </div>
+
+        {/* Pinned Bottom Pagination */}
+        <Pagination
+          pagination={activeTab === "categories" ? categoryPagination : itemPagination}
+          totalItems={activeTab === "categories" ? filteredCategories.length : filteredItems.length}
+          onPageChange={(newPage) => {
+            if (activeTab === "categories") {
+              setCategoryPagination(prev => ({ ...prev, page: newPage }));
+            } else {
+              setItemPagination(prev => ({ ...prev, page: newPage }));
+            }
+          }}
+          onLimitChange={(newLimit) => {
+            if (activeTab === "categories") {
+              setCategoryPagination({ page: 1, limit: newLimit });
+            } else {
+              setItemPagination({ page: 1, limit: newLimit });
+            }
+          }}
+          itemName={activeTab === "categories" ? "categories" : "items"}
+        />
       </div>
 
       {/* Add / Edit Modal */}
@@ -262,35 +355,65 @@ export default function MasterMenuPage() {
 
 function CategoriesTable({ categories, onEdit, onDelete }) {
   if (!categories.length) {
-    return <div className="p-8 text-center text-secondary">No categories found.</div>;
+    return (
+      <table className="w-full text-left border-collapse">
+        <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
+          <tr>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme">Category Name</th>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme">Description</th>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme">Status</th>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colSpan={4} className="px-6 py-20 text-center text-secondary">
+              No categories found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    );
   }
 
   return (
     <table className="w-full text-left border-collapse">
-      <thead>
-        <tr className="border-b border-theme text-sm text-secondary">
-          <th className="px-6 py-4 font-medium">Category Name</th>
-          <th className="px-6 py-4 font-medium">Description</th>
-          <th className="px-6 py-4 font-medium">Status</th>
-          <th className="px-6 py-4 font-medium text-right">Actions</th>
+      <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
+        <tr>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme">Category Name</th>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme">Description</th>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme">Status</th>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme text-right">Actions</th>
         </tr>
       </thead>
       <tbody>
         {categories.map((cat) => (
-          <tr key={cat._id} className="border-b border-theme hover:bg-gray-50 dark:hover:bg-[var(--color-background)]">
-            <td className="px-6 py-4 text-sm font-medium text-theme">{cat.name}</td>
-            <td className="px-6 py-4 text-sm text-secondary">{cat.description}</td>
-            <td className="px-6 py-4 text-sm">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${cat.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}>
+          <tr key={cat._id} className="border-b border-theme hover:bg-primary-light/10 transition-colors">
+            <td className="px-6 py-3.5 text-sm font-semibold text-theme">{cat.name}</td>
+            <td className="px-6 py-3.5 text-sm text-secondary">{cat.description || "-"}</td>
+            <td className="px-6 py-3.5 text-sm">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                cat.status === 'active' || !cat.status 
+                  ? 'bg-green-500/15 text-green-600 dark:text-green-400' 
+                  : 'bg-red-500/15 text-red-600 dark:text-red-400'
+              }`}>
                 {cat.status || 'active'}
               </span>
             </td>
-            <td className="px-6 py-4 text-right">
-              <div className="flex items-center justify-end gap-2">
-                <button onClick={() => onEdit(cat)} className="p-1.5 text-secondary hover:text-primary transition-colors">
+            <td className="px-6 py-3.5 text-right">
+              <div className="flex items-center justify-end gap-1">
+                <button 
+                  onClick={() => onEdit(cat)} 
+                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light/40 rounded-lg transition-colors cursor-pointer"
+                  title="Edit Category"
+                >
                   <Edit2 size={16} />
                 </button>
-                <button onClick={() => onDelete(cat)} className="p-1.5 text-secondary hover:text-red-500 transition-colors">
+                <button 
+                  onClick={() => onDelete(cat)} 
+                  className="p-1.5 text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                  title="Delete Category"
+                >
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -304,25 +427,43 @@ function CategoriesTable({ categories, onEdit, onDelete }) {
 
 function ItemsTable({ items, onEdit, onDelete }) {
   if (!items.length) {
-    return <div className="p-8 text-center text-secondary">No items found.</div>;
+    return (
+      <table className="w-full text-left border-collapse">
+        <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
+          <tr>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme">Item Name</th>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme">Category</th>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme">Status</th>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colSpan={4} className="px-6 py-20 text-center text-secondary">
+              No menu items found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    );
   }
 
   return (
     <table className="w-full text-left border-collapse">
-      <thead>
-        <tr className="border-b border-theme text-sm text-secondary">
-          <th className="px-6 py-4 font-medium">Item Name</th>
-          <th className="px-6 py-4 font-medium">Category</th>
-          <th className="px-6 py-4 font-medium">Status</th>
-          <th className="px-6 py-4 font-medium text-right">Actions</th>
+      <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
+        <tr>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme">Item Name</th>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme">Category</th>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme">Status</th>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme text-right">Actions</th>
         </tr>
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr key={item._id} className="border-b border-theme hover:bg-gray-50 dark:hover:bg-[var(--color-background)]">
-            <td className="px-6 py-4 text-sm font-medium text-theme">
+          <tr key={item._id} className="border-b border-theme hover:bg-primary-light/10 transition-colors">
+            <td className="px-6 py-3.5 text-sm font-medium text-theme">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex items-center justify-center text-secondary font-medium">
+                <div className="w-9 h-9 bg-primary/10 rounded-lg overflow-hidden flex items-center justify-center text-primary font-medium shrink-0">
                   {item.image ? (
                     <img 
                       src={item.image.startsWith('http') ? item.image : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${item.image}`} 
@@ -330,24 +471,40 @@ function ItemsTable({ items, onEdit, onDelete }) {
                       className="w-full h-full object-cover" 
                     />
                   ) : (
-                    item.name.charAt(0)
+                    (item.name || 'M').charAt(0).toUpperCase()
                   )}
                 </div>
-                {item.name}
+                <span className="font-semibold">{item.name}</span>
               </div>
             </td>
-            <td className="px-6 py-4 text-sm text-secondary">{item.categoryId?.name || 'Uncategorized'}</td>
-            <td className="px-6 py-4 text-sm">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}>
+            <td className="px-6 py-3.5 text-sm text-secondary">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-light/30 text-theme text-xs font-medium">
+                {item.categoryId?.name || 'Uncategorized'}
+              </span>
+            </td>
+            <td className="px-6 py-3.5 text-sm">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                item.status === 'active' || !item.status 
+                  ? 'bg-green-500/15 text-green-600 dark:text-green-400' 
+                  : 'bg-red-500/15 text-red-600 dark:text-red-400'
+              }`}>
                 {item.status || 'active'}
               </span>
             </td>
-            <td className="px-6 py-4 text-right">
-              <div className="flex items-center justify-end gap-2">
-                <button onClick={() => onEdit(item)} className="p-1.5 text-secondary hover:text-primary transition-colors">
+            <td className="px-6 py-3.5 text-right">
+              <div className="flex items-center justify-end gap-1">
+                <button 
+                  onClick={() => onEdit(item)} 
+                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light/40 rounded-lg transition-colors cursor-pointer"
+                  title="Edit Item"
+                >
                   <Edit2 size={16} />
                 </button>
-                <button onClick={() => onDelete(item)} className="p-1.5 text-secondary hover:text-red-500 transition-colors">
+                <button 
+                  onClick={() => onDelete(item)} 
+                  className="p-1.5 text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                  title="Delete Item"
+                >
                   <Trash2 size={16} />
                 </button>
               </div>

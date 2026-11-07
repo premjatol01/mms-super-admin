@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { leadStages, stageOrder } from "../data/leadData";
-import { MapPin, Phone, Mail, Building2, MoreVertical, ArrowRight, User } from "lucide-react";
+import { MapPin, Phone, MoreVertical, User } from "lucide-react";
 
 export default function LeadKanbanBoard({ 
   leads, 
@@ -10,7 +11,22 @@ export default function LeadKanbanBoard({
   onEdit
 }) {
   const [draggedLead, setDraggedLead] = useState(null);
-  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [dropdownMenu, setDropdownMenu] = useState(null);
+
+  useEffect(() => {
+    if (!dropdownMenu) return;
+
+    const handleClose = () => setDropdownMenu(null);
+    window.addEventListener("click", handleClose);
+    window.addEventListener("scroll", handleClose, true);
+    window.addEventListener("resize", handleClose);
+
+    return () => {
+      window.removeEventListener("click", handleClose);
+      window.removeEventListener("scroll", handleClose, true);
+      window.removeEventListener("resize", handleClose);
+    };
+  }, [dropdownMenu]);
 
   const handleDragStart = (e, lead) => {
     setDraggedLead(lead);
@@ -41,8 +57,29 @@ export default function LeadKanbanBoard({
     setDraggedLead(null);
   };
 
+  const handleToggleDropdown = (e, lead, stageKey) => {
+    e.stopPropagation();
+    if (dropdownMenu?.id === lead.id) {
+      setDropdownMenu(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuHeight = stageKey === 'converted' ? 85 : 45;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < menuHeight && rect.top > menuHeight;
+
+    setDropdownMenu({
+      id: lead.id,
+      lead,
+      stageKey,
+      top: openUpward ? rect.top - menuHeight - 4 : rect.bottom + 4,
+      right: Math.max(16, window.innerWidth - rect.right),
+    });
+  };
+
   return (
-    <div className="flex h-full min-h-[600px] overflow-x-auto gap-4 pb-4">
+    <div className="flex-1 min-h-0 flex overflow-x-auto gap-4 pb-2">
       {stageOrder.map((stageKey) => {
         const stageInfo = leadStages.find(s => s.value === stageKey);
         const stageLeads = leads.filter(l => l.stage === stageKey);
@@ -50,107 +87,115 @@ export default function LeadKanbanBoard({
         return (
           <div 
             key={stageKey}
-            className="flex-none w-80 bg-surface border border-theme rounded-xl flex flex-col"
+            className="flex-none w-80 h-full min-h-0 bg-surface border border-theme rounded-xl flex flex-col overflow-hidden shadow-sm"
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, stageKey)}
           >
             {/* Column Header */}
-            <div className="p-3 border-b border-theme flex items-center justify-between bg-primary-light/5 rounded-t-xl">
-              <h3 className="font-semibold text-theme flex items-center gap-2">
+            <div className="flex-none p-3 border-b border-theme flex items-center justify-between bg-primary-light/5">
+              <h3 className="font-semibold text-theme text-sm flex items-center gap-2">
                 <span 
                   className="w-2.5 h-2.5 rounded-full" 
-                  style={{ backgroundColor: stageInfo.color }}
+                  style={{ backgroundColor: stageInfo?.color || "#d9480f" }}
                 />
-                {stageInfo.label}
+                {stageInfo?.label || stageKey}
               </h3>
-              <span className="text-xs font-medium text-secondary bg-surface px-2 py-0.5 rounded-full border border-theme">
+              <span className="text-xs font-semibold text-secondary bg-surface px-2 py-0.5 rounded-full border border-theme">
                 {stageLeads.length}
               </span>
             </div>
 
-            {/* Column Body */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 relative">
-              {stageLeads.map(lead => (
-                <div
-                  key={lead.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, lead)}
-                  onDragEnd={handleDragEnd}
-                  onClick={() => onView(lead)}
-                  className="bg-surface border border-theme rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-primary transition-colors group relative"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-theme text-sm">{lead.restaurantName}</h4>
-                    <div className="relative">
+            {/* Column Body - vertically scrollable */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 relative">
+              {stageLeads.length === 0 ? (
+                <div className="h-28 flex items-center justify-center border border-dashed border-theme rounded-lg text-xs text-secondary">
+                  No leads in this stage
+                </div>
+              ) : (
+                stageLeads.map(lead => (
+                  <div
+                    key={lead.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, lead)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => onView(lead)}
+                    className="bg-surface border border-theme rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-primary transition-colors group relative"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-theme text-sm truncate mr-2">{lead.restaurantName}</h4>
                       <button 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          setOpenDropdownId(openDropdownId === lead.id ? null : lead.id); 
-                        }}
-                        className={`text-secondary hover:text-theme transition-opacity ${openDropdownId === lead.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                        onClick={(e) => handleToggleDropdown(e, lead, stageKey)}
+                        className={`text-secondary hover:text-theme p-1 rounded transition-opacity cursor-pointer ${
+                          dropdownMenu?.id === lead.id ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                        title="Actions"
                       >
                         <MoreVertical size={14} />
                       </button>
-                      
-                      {openDropdownId === lead.id && (
-                        <>
-                          <div 
-                            className="fixed inset-0 z-10" 
-                            onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} 
-                          />
-                          <div className="absolute right-0 top-full mt-1 w-40 bg-surface border border-theme rounded-lg shadow-lg z-20 py-1">
-                            <button
-                              className="w-full text-left px-4 py-2 text-sm text-theme hover:bg-primary-light"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenDropdownId(null);
-                                onEdit(lead);
-                              }}
-                            >
-                              Edit Lead
-                            </button>
-                            {stageKey === 'converted' && (
-                              <button
-                                className="w-full text-left px-4 py-2 text-sm text-primary hover:bg-primary-light font-medium"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenDropdownId(null);
-                                  onConvert(lead);
-                                }}
-                              >
-                                Convert to Restaurant
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      )}
                     </div>
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs text-secondary">
-                      <User size={12} className="flex-shrink-0" />
-                      <span className="truncate">{lead.contactPerson}</span>
-                    </div>
-                    {lead.address?.city && (
+                    
+                    <div className="space-y-1.5">
                       <div className="flex items-center gap-2 text-xs text-secondary">
-                        <MapPin size={12} className="flex-shrink-0" />
-                        <span className="truncate">{lead.address.city}</span>
+                        <User size={12} className="flex-shrink-0" />
+                        <span className="truncate">{lead.contactPerson}</span>
                       </div>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-secondary">
-                      <Phone size={12} className="flex-shrink-0" />
-                      <span>{lead.phone}</span>
+                      {lead.address?.city && (
+                        <div className="flex items-center gap-2 text-xs text-secondary">
+                          <MapPin size={12} className="flex-shrink-0" />
+                          <span className="truncate">{lead.address.city}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-secondary">
+                        <Phone size={12} className="flex-shrink-0" />
+                        <span>{lead.phone}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         );
       })}
+
+      {/* Portal Dropdown Menu */}
+      {dropdownMenu && createPortal(
+        <div
+          id="lead-card-dropdown"
+          style={{
+            position: "fixed",
+            top: `${dropdownMenu.top}px`,
+            right: `${dropdownMenu.right}px`,
+            zIndex: 99999,
+          }}
+          className="bg-surface border border-theme rounded-lg shadow-xl w-44 py-1 animate-in fade-in duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full text-left px-3.5 py-2 text-xs font-medium text-theme hover:bg-primary-light/50 cursor-pointer transition-colors"
+            onClick={() => {
+              const target = dropdownMenu.lead;
+              setDropdownMenu(null);
+              onEdit(target);
+            }}
+          >
+            Edit Lead
+          </button>
+          {dropdownMenu.stageKey === 'converted' && (
+            <button
+              className="w-full text-left px-3.5 py-2 text-xs font-medium text-primary hover:bg-primary-light/50 cursor-pointer transition-colors"
+              onClick={() => {
+                const target = dropdownMenu.lead;
+                setDropdownMenu(null);
+                onConvert(target);
+              }}
+            >
+              Convert to Restaurant
+            </button>
+          )}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
-
-

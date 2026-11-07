@@ -7,6 +7,7 @@ import Input from "../../../components/ui/Input";
 export default function SearchFilters({ 
   filters, 
   onFilterChange, 
+  onApplyFilters,
   onResetFilters, 
   restaurantCount,
   onAdd
@@ -14,9 +15,33 @@ export default function SearchFilters({
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const drawerRef = useRef(null);
 
+  // Draft filters state inside drawer
+  const [draftFilters, setDraftFilters] = useState({
+    status: filters.status || "",
+    subscriptionStatus: filters.subscriptionStatus || "",
+    package: filters.package || "",
+    city: filters.city || "",
+    dateFrom: filters.dateFrom || "",
+    dateTo: filters.dateTo || "",
+  });
+
   const hasActiveFilters = useMemo(() => {
     return Object.values(filters).some(v => v && v !== "");
   }, [filters]);
+
+  // Sync draft filters when drawer opens
+  useEffect(() => {
+    if (showFilterDrawer) {
+      setDraftFilters({
+        status: filters.status || "",
+        subscriptionStatus: filters.subscriptionStatus || "",
+        package: filters.package || "",
+        city: filters.city || "",
+        dateFrom: filters.dateFrom || "",
+        dateTo: filters.dateTo || "",
+      });
+    }
+  }, [showFilterDrawer, filters]);
 
   // Close drawer when clicking outside
   useEffect(() => {
@@ -30,6 +55,32 @@ export default function SearchFilters({
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showFilterDrawer]);
+
+  const handleDraftChange = (key, value) => {
+    setDraftFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApply = () => {
+    if (onApplyFilters) {
+      onApplyFilters(draftFilters);
+    } else {
+      Object.entries(draftFilters).forEach(([k, v]) => onFilterChange(k, v));
+    }
+    setShowFilterDrawer(false);
+  };
+
+  const handleReset = () => {
+    setDraftFilters({
+      status: "",
+      subscriptionStatus: "",
+      package: "",
+      city: "",
+      dateFrom: "",
+      dateTo: "",
+    });
+    onResetFilters();
+    setShowFilterDrawer(false);
+  };
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -47,7 +98,7 @@ export default function SearchFilters({
           {filters.search && (
             <button
               onClick={() => onFilterChange("search", "")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme cursor-pointer"
             >
               <X size={14} />
             </button>
@@ -92,7 +143,7 @@ export default function SearchFilters({
                 <h2 className="text-lg font-semibold text-theme">Filters</h2>
                 <button 
                   onClick={() => setShowFilterDrawer(false)}
-                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors"
+                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -101,8 +152,8 @@ export default function SearchFilters({
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <Select 
                   label="Status" 
-                  value={filters.status} 
-                  onChange={(v) => onFilterChange("status", v)} 
+                  value={draftFilters.status} 
+                  onChange={(v) => handleDraftChange("status", v)} 
                   options={[
                     { value: "active", label: "Active" },
                     { value: "inactive", label: "Inactive" },
@@ -112,8 +163,8 @@ export default function SearchFilters({
                 
                 <Select 
                   label="Subscription Status" 
-                  value={filters.subscriptionStatus} 
-                  onChange={(v) => onFilterChange("subscriptionStatus", v)} 
+                  value={draftFilters.subscriptionStatus} 
+                  onChange={(v) => handleDraftChange("subscriptionStatus", v)} 
                   options={[
                     { value: "active", label: "Active" },
                     { value: "expired", label: "Expired" },
@@ -124,8 +175,8 @@ export default function SearchFilters({
                 
                 <Select 
                   label="Package" 
-                  value={filters.package} 
-                  onChange={(v) => onFilterChange("package", v)} 
+                  value={draftFilters.package} 
+                  onChange={(v) => handleDraftChange("package", v)} 
                   options={[
                     { value: "basic", label: "Basic" },
                     { value: "standard", label: "Standard" },
@@ -136,8 +187,8 @@ export default function SearchFilters({
                 
                 <Select 
                   label="City" 
-                  value={filters.city} 
-                  onChange={(v) => onFilterChange("city", v)} 
+                  value={draftFilters.city} 
+                  onChange={(v) => handleDraftChange("city", v)} 
                   options={[
                     { value: "mumbai", label: "Mumbai" },
                     { value: "delhi", label: "Delhi" },
@@ -152,14 +203,14 @@ export default function SearchFilters({
                   <Input 
                     type="date" 
                     label="From Date" 
-                    value={filters.dateFrom} 
-                    onChange={(e) => onFilterChange("dateFrom", e.target.value)} 
+                    value={draftFilters.dateFrom} 
+                    onChange={(e) => handleDraftChange("dateFrom", e.target.value)} 
                   />
                   <Input 
                     type="date" 
                     label="To Date" 
-                    value={filters.dateTo} 
-                    onChange={(e) => onFilterChange("dateTo", e.target.value)} 
+                    value={draftFilters.dateTo} 
+                    onChange={(e) => handleDraftChange("dateTo", e.target.value)} 
                   />
                 </div>
               </div>
@@ -168,16 +219,13 @@ export default function SearchFilters({
               <div className="px-6 py-4 border-t border-theme bg-surface flex gap-3">
                 <Button 
                   variant="secondary" 
-                  onClick={() => {
-                    onResetFilters();
-                    setShowFilterDrawer(false);
-                  }}
+                  onClick={handleReset}
                   className="flex-1"
                 >
                   Reset
                 </Button>
                 <Button 
-                  onClick={() => setShowFilterDrawer(false)}
+                  onClick={handleApply}
                   className="flex-1"
                 >
                   Apply Filters

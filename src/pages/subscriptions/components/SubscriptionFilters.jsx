@@ -1,23 +1,64 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X, SlidersHorizontal, Plus } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
 import { getAllPackages } from "../data/packageHelper";
 import { durationOptions } from "../data/subscriptionData";
+import { packagesAPI } from "../../../api/packages";
 
 export default function SubscriptionFilters({ 
   filters, 
   onFilterChange, 
+  onApplyFilters,
   onResetFilters, 
-  subscriptionCount 
+  subscriptionCount,
+  onAssign
 }) {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const drawerRef = useRef(null);
-  const packages = getAllPackages();
+  const staticPackages = getAllPackages();
+  const [packageOptions, setPackageOptions] = useState([]);
+
+  // Local draft state for drawer filters
+  const [draftFilters, setDraftFilters] = useState({
+    status: filters.status || "",
+    package: filters.package || "",
+    duration: filters.duration || "",
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    packagesAPI.getPackages()
+      .then(res => {
+        const data = res?.data?.data || res?.data?.packages || res?.data || [];
+        if (mounted && Array.isArray(data) && data.length > 0) {
+          setPackageOptions(data.map(p => ({ value: p.name, label: p.name })));
+        }
+      })
+      .catch(err => {
+        console.warn("Failed to load packages for filters:", err);
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  const effectivePackages = packageOptions.length > 0 
+    ? packageOptions 
+    : staticPackages.map(p => ({ value: p.name, label: p.name }));
 
   const hasActiveFilters = useMemo(() => {
     return Object.values(filters).some(v => v && v !== "");
   }, [filters]);
+
+  // Sync draft filters when drawer opens
+  useEffect(() => {
+    if (showFilterDrawer) {
+      setDraftFilters({
+        status: filters.status || "",
+        package: filters.package || "",
+        duration: filters.duration || "",
+      });
+    }
+  }, [showFilterDrawer, filters]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -30,6 +71,29 @@ export default function SubscriptionFilters({
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showFilterDrawer]);
+
+  const handleDraftChange = (key, value) => {
+    setDraftFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApply = () => {
+    if (onApplyFilters) {
+      onApplyFilters(draftFilters);
+    } else {
+      Object.entries(draftFilters).forEach(([k, v]) => onFilterChange(k, v));
+    }
+    setShowFilterDrawer(false);
+  };
+
+  const handleReset = () => {
+    setDraftFilters({
+      status: "",
+      package: "",
+      duration: "",
+    });
+    onResetFilters();
+    setShowFilterDrawer(false);
+  };
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -46,7 +110,7 @@ export default function SubscriptionFilters({
           {filters.search && (
             <button
               onClick={() => onFilterChange("search", "")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme cursor-pointer"
             >
               <X size={14} />
             </button>
@@ -74,6 +138,12 @@ export default function SubscriptionFilters({
           </Button>
         )}
 
+        {onAssign && (
+          <Button size="sm" onClick={onAssign}>
+            <Plus size={14} /> Assign Subscription
+          </Button>
+        )}
+
         {showFilterDrawer && (
           <div className="fixed inset-0 z-50 flex justify-end">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilterDrawer(false)} />
@@ -82,7 +152,7 @@ export default function SubscriptionFilters({
                 <h2 className="text-lg font-semibold text-theme">Filters</h2>
                 <button 
                   onClick={() => setShowFilterDrawer(false)}
-                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors"
+                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -91,8 +161,8 @@ export default function SubscriptionFilters({
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <Select 
                   label="Status" 
-                  value={filters.status} 
-                  onChange={(v) => onFilterChange("status", v)} 
+                  value={draftFilters.status} 
+                  onChange={(v) => handleDraftChange("status", v)} 
                   options={[
                     { value: "active", label: "Active" },
                     { value: "expiring", label: "Expiring Soon" },
@@ -105,16 +175,16 @@ export default function SubscriptionFilters({
                 
                 <Select 
                   label="Package" 
-                  value={filters.package} 
-                  onChange={(v) => onFilterChange("package", v)} 
-                  options={packages.map(p => ({ value: p.name, label: p.name }))}
+                  value={draftFilters.package} 
+                  onChange={(v) => handleDraftChange("package", v)} 
+                  options={effectivePackages}
                   placeholder="All Packages" 
                 />
 
                 <Select 
                   label="Duration" 
-                  value={filters.duration} 
-                  onChange={(v) => onFilterChange("duration", v)} 
+                  value={draftFilters.duration} 
+                  onChange={(v) => handleDraftChange("duration", v)} 
                   options={durationOptions}
                   placeholder="All Durations" 
                 />
@@ -123,16 +193,13 @@ export default function SubscriptionFilters({
               <div className="px-6 py-4 border-t border-theme bg-surface flex gap-3">
                 <Button 
                   variant="secondary" 
-                  onClick={() => {
-                    onResetFilters();
-                    setShowFilterDrawer(false);
-                  }}
+                  onClick={handleReset}
                   className="flex-1"
                 >
                   Reset
                 </Button>
                 <Button 
-                  onClick={() => setShowFilterDrawer(false)}
+                  onClick={handleApply}
                   className="flex-1"
                 >
                   Apply Filters

@@ -16,6 +16,7 @@ export default function RestaurantsPage() {
     loading,
     filters,
     setFilter,
+    setFilters,
     resetFilters,
     pagination,
     setPage,
@@ -98,20 +99,21 @@ export default function RestaurantsPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
       {/* Search & Filters */}
-      <div className="flex-none mb-5">
+      <div className="flex-none mb-4">
         <SearchFilters
           filters={filters}
           onFilterChange={handleFilterChange}
+          onApplyFilters={setFilters}
           onResetFilters={handleResetFilters}
           restaurantCount={pagination.total}
           onAdd={openAddModal}
         />
       </div>
 
-      {/* Table */}
-      <div className="flex-1 min-h-0 flex flex-col mb-5">
+      {/* Table & Bottom Pinned Pagination Card */}
+      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
         <RestaurantTable
           restaurants={restaurants}
           loading={loading}
@@ -125,15 +127,14 @@ export default function RestaurantsPage() {
           onManageFeatures={handleManageFeatures}
           onSendInvite={handleSendInvite}
         />
-      </div>
 
-      {/* Pagination */}
-      <div className="flex-none">
+        {/* Pinned Pagination at Bottom */}
         <Pagination
           pagination={pagination}
           totalItems={pagination.total}
           onPageChange={setPage}
           onLimitChange={setLimit}
+          itemName="restaurants"
         />
       </div>
 

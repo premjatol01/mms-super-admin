@@ -63,7 +63,7 @@ export default function RestaurantDetailsDrawer() {
                 <div>
                   <p className="text-xs text-secondary">Address</p>
                   <p className="text-sm text-theme">
-                    {selectedRestaurant.address?.fullAddress}, {selectedRestaurant.address?.city}
+                    {selectedRestaurant.address?.fullAddress ? `${selectedRestaurant.address.fullAddress}, ` : ""}{selectedRestaurant.address?.city || "N/A"}
                   </p>
                   <p className="text-xs text-secondary">
                     {selectedRestaurant.address?.city}, {selectedRestaurant.address?.state}, {selectedRestaurant.address?.country} - {selectedRestaurant.address?.pincode}
@@ -73,45 +73,55 @@ export default function RestaurantDetailsDrawer() {
               <div className="flex items-start gap-3">
                 <Phone size={16} className="text-secondary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-secondary">Phone</p>
-                  <p className="text-sm text-theme">{selectedRestaurant.phone || "N/A"}</p>
+                  <p className="text-xs text-secondary">Restaurant Phone</p>
+                  <p className="text-sm text-theme">
+                    {(selectedRestaurant.phone || selectedRestaurant.contact?.primaryPhone) 
+                      ? `+91 ${String(selectedRestaurant.phone || selectedRestaurant.contact?.primaryPhone).replace(/\D/g, '').slice(-10)}` 
+                      : "N/A"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Mail size={16} className="text-secondary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-secondary">Email</p>
-                  <p className="text-sm text-theme">{selectedRestaurant.email || "N/A"}</p>
+                  <p className="text-sm text-theme">{selectedRestaurant.email || selectedRestaurant.contact?.email || "N/A"}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Globe size={16} className="text-secondary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-secondary">Website</p>
-                  <p className="text-sm text-theme">{selectedRestaurant.website || "N/A"}</p>
+                  <p className="text-sm text-theme">
+                    {selectedRestaurant.websiteUrl || (typeof selectedRestaurant.website === 'string' ? selectedRestaurant.website : selectedRestaurant.website?.url || selectedRestaurant.website?.subdomain) || "N/A"}
+                  </p>
                 </div>
               </div>
             </div>
           </FormSection>
 
           {/* Admin Info */}
-          <FormSection title="Restaurant Admin">
+          <FormSection title="Restaurant Admin Information">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-primary font-medium flex-shrink-0">
                 {selectedRestaurant.admin?.name?.[0] || "A"}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
                 <div>
-                  <p className="text-xs text-secondary">Name</p>
+                  <p className="text-xs text-secondary">Admin Name</p>
                   <p className="text-sm font-medium text-theme">{selectedRestaurant.admin?.name || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-secondary">Email</p>
+                  <p className="text-xs text-secondary">Admin Email</p>
                   <p className="text-sm text-theme">{selectedRestaurant.admin?.email || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-secondary">Phone</p>
-                  <p className="text-sm text-theme">{selectedRestaurant.admin?.phone || "N/A"}</p>
+                  <p className="text-xs text-secondary">Admin Phone</p>
+                  <p className="text-sm text-theme">
+                    {selectedRestaurant.admin?.phone 
+                      ? `+91 ${String(selectedRestaurant.admin.phone).replace(/\D/g, '').slice(-10)}` 
+                      : "N/A"}
+                  </p>
                 </div>
               </div>
             </div>

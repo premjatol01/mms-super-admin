@@ -6,15 +6,32 @@ import Select from "../../../components/ui/Select";
 export default function PackageFilters({ 
   filters, 
   onFilterChange, 
+  onApplyFilters,
   onResetFilters, 
   packageCount 
 }) {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const drawerRef = useRef(null);
 
+  // Draft filters state inside drawer
+  const [draftFilters, setDraftFilters] = useState({
+    status: filters.status || "",
+    duration: filters.duration || "",
+  });
+
   const hasActiveFilters = useMemo(() => {
     return Object.values(filters).some(v => v && v !== "");
   }, [filters]);
+
+  // Sync draft filters when drawer opens
+  useEffect(() => {
+    if (showFilterDrawer) {
+      setDraftFilters({
+        status: filters.status || "",
+        duration: filters.duration || "",
+      });
+    }
+  }, [showFilterDrawer, filters]);
 
   // Close drawer when clicking outside
   useEffect(() => {
@@ -28,6 +45,28 @@ export default function PackageFilters({
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showFilterDrawer]);
+
+  const handleDraftChange = (key, value) => {
+    setDraftFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApply = () => {
+    if (onApplyFilters) {
+      onApplyFilters(draftFilters);
+    } else {
+      Object.entries(draftFilters).forEach(([k, v]) => onFilterChange(k, v));
+    }
+    setShowFilterDrawer(false);
+  };
+
+  const handleReset = () => {
+    setDraftFilters({
+      status: "",
+      duration: "",
+    });
+    onResetFilters();
+    setShowFilterDrawer(false);
+  };
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -45,7 +84,7 @@ export default function PackageFilters({
           {filters.search && (
             <button
               onClick={() => onFilterChange("search", "")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme cursor-pointer"
             >
               <X size={14} />
             </button>
@@ -84,7 +123,7 @@ export default function PackageFilters({
                 <h2 className="text-lg font-semibold text-theme">Filters</h2>
                 <button 
                   onClick={() => setShowFilterDrawer(false)}
-                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors"
+                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -93,8 +132,8 @@ export default function PackageFilters({
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <Select 
                   label="Status" 
-                  value={filters.status} 
-                  onChange={(v) => onFilterChange("status", v)} 
+                  value={draftFilters.status} 
+                  onChange={(v) => handleDraftChange("status", v)} 
                   options={[
                     { value: "active", label: "Active" },
                     { value: "inactive", label: "Inactive" },
@@ -104,8 +143,8 @@ export default function PackageFilters({
                 
                 <Select 
                   label="Available Duration" 
-                  value={filters.duration} 
-                  onChange={(v) => onFilterChange("duration", v)} 
+                  value={draftFilters.duration} 
+                  onChange={(v) => handleDraftChange("duration", v)} 
                   options={[
                     { value: "1_month", label: "1 Month (30 Days)" },
                     { value: "6_months", label: "6 Months (180 Days)" },
@@ -119,16 +158,13 @@ export default function PackageFilters({
               <div className="px-6 py-4 border-t border-theme bg-surface flex gap-3">
                 <Button 
                   variant="secondary" 
-                  onClick={() => {
-                    onResetFilters();
-                    setShowFilterDrawer(false);
-                  }}
+                  onClick={handleReset}
                   className="flex-1"
                 >
                   Reset
                 </Button>
                 <Button 
-                  onClick={() => setShowFilterDrawer(false)}
+                  onClick={handleApply}
                   className="flex-1"
                 >
                   Apply Filters

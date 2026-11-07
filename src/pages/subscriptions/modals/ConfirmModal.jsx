@@ -6,11 +6,12 @@ export default function ConfirmModal() {
 
   if (!showConfirmModal || !confirmAction || !selectedSubscription) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    const subId = selectedSubscription._id || selectedSubscription.id;
     if (confirmAction === "cancel") {
-      cancelSubscription(selectedSubscription.id);
+      await cancelSubscription(subId);
     } else if (confirmAction === "reactivate") {
-      reactivateSubscription(selectedSubscription.id);
+      await reactivateSubscription(subId);
     }
     hideConfirm();
   };

@@ -77,12 +77,21 @@ export default function RestaurantTable({
     };
   }, [dropdownMenu]);
 
-  if (!loading && restaurants.length === 0) {
+  if (loading) {
     return (
-      <div className="bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-12 text-center">
+        <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-sm text-secondary">Loading restaurants...</p>
+      </div>
+    );
+  }
+
+  if (restaurants.length === 0) {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-primary-light/20 border-b border-theme">
+            <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
               <tr>
                 <th className="w-12 min-w-[48px] max-w-[48px] px-3 py-3.5 text-center">
                   <input type="checkbox" checked={false} onChange={() => {}} className="rounded border-theme opacity-50 cursor-not-allowed" disabled />
@@ -101,7 +110,7 @@ export default function RestaurantTable({
             </thead>
             <tbody>
               <tr>
-                <td colSpan={11} className="px-4 py-16 text-center text-secondary">
+                <td colSpan={11} className="px-4 py-24 text-center text-secondary">
                   No restaurants found
                 </td>
               </tr>
@@ -113,10 +122,10 @@ export default function RestaurantTable({
   }
 
   return (
-    <div className="bg-surface border border-theme rounded-xl overflow-hidden shadow-sm flex flex-col h-full">
-      <div className="overflow-x-auto flex-1">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-primary-light/20 border-b border-theme">
+          <thead className="bg-primary-light/20 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
             <tr>
               <th className="w-12 min-w-[48px] max-w-[48px] px-3 py-3.5 text-center">
                 <input 
@@ -183,7 +192,9 @@ export default function RestaurantTable({
                     <p className="text-sm text-theme truncate" title={restaurant.admin?.email}>{restaurant.admin?.email || '-'}</p>
                   </td>
                   <td className="px-4 py-3 w-32 min-w-[120px]">
-                    <p className="text-sm text-theme whitespace-nowrap">{restaurant.admin?.phone || '-'}</p>
+                    <p className="text-sm text-theme whitespace-nowrap">
+                      {restaurant.admin?.phone ? `+91 ${String(restaurant.admin.phone).replace(/\D/g, '').slice(-10)}` : '-'}
+                    </p>
                   </td>
                   <td className="px-4 py-3 w-28 min-w-[110px]">
                     <p className="text-sm text-theme truncate">{restaurant.address?.city || '-'}</p>

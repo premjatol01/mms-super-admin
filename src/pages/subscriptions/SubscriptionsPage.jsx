@@ -1,7 +1,5 @@
-import { useMemo } from "react";
-import { Plus } from "lucide-react";
+import { useEffect } from "react";
 import { useSubscriptionsStore } from "../../store/subscriptionsStore";
-import Button from "../../components/ui/Button";
 import SubscriptionFilters from "./components/SubscriptionFilters";
 import SubscriptionTable from "./components/SubscriptionTable";
 import SubscriptionSummaryCard from "./components/SubscriptionSummaryCard";
@@ -14,8 +12,12 @@ import ConfirmModal from "./modals/ConfirmModal";
 
 export default function SubscriptionsPage() {
   const {
+    subscriptions,
+    loading,
+    summary,
     filters,
     setFilter,
+    setFilters,
     resetFilters,
     pagination,
     setPage,
@@ -24,18 +26,12 @@ export default function SubscriptionsPage() {
     openDetails,
     openRenewModal,
     openChangePackageModal,
-    getFilteredSubscriptions,
-    getSummary,
+    fetchSubscriptions,
   } = useSubscriptionsStore();
 
-  const filteredSubscriptions = useMemo(() => getFilteredSubscriptions(), [filters, getFilteredSubscriptions]);
-  
-  const paginatedSubscriptions = useMemo(() => {
-    const start = (pagination.page - 1) * pagination.limit;
-    return filteredSubscriptions.slice(start, start + pagination.limit);
-  }, [filteredSubscriptions, pagination]);
-
-  const summary = useMemo(() => getSummary(), [getFilteredSubscriptions, getSummary]);
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [filters, pagination.page, pagination.limit, fetchSubscriptions]);
 
   const handleFilterChange = (key, value) => {
     setFilter(key, value);
@@ -58,42 +54,45 @@ export default function SubscriptionsPage() {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
-        <Button onClick={openAssignModal}>
-          <Plus size={16} /> Assign Subscription
-        </Button>
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      {/* Summary Cards */}
+      <div className="flex-none mb-4">
+        <SubscriptionSummaryCard summary={summary} />
       </div>
 
-      {/* Summary Cards */}
-      <SubscriptionSummaryCard summary={summary} />
+      {/* Search, Filters & Assign Button */}
+      <div className="flex-none mb-4">
+        <SubscriptionFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onApplyFilters={setFilters}
+          onResetFilters={handleResetFilters}
+          subscriptionCount={pagination.total || subscriptions.length}
+          onAssign={openAssignModal}
+        />
+      </div>
 
-      {/* Search & Filters */}
-      <SubscriptionFilters
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={handleResetFilters}
-        subscriptionCount={filteredSubscriptions.length}
-      />
+      {/* Table & Bottom Pinned Pagination Card */}
+      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
+        <SubscriptionTable
+          subscriptions={subscriptions}
+          loading={loading}
+          onView={handleViewDetails}
+          onRenew={handleRenew}
+          onChangePackage={handleChangePackage}
+        />
 
-      {/* Table */}
-      <SubscriptionTable
-        subscriptions={paginatedSubscriptions}
-        onView={handleViewDetails}
-        onRenew={handleRenew}
-        onChangePackage={handleChangePackage}
-      />
+        {/* Pinned Pagination Bar */}
+        <Pagination
+          pagination={pagination}
+          totalItems={pagination.total || subscriptions.length}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+          itemName="subscriptions"
+        />
+      </div>
 
-      {/* Pagination */}
-      <Pagination
-        pagination={pagination}
-        totalItems={filteredSubscriptions.length}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-      />
-
-      {/* Modals */}
+      {/* Modals & Drawers */}
       <AssignSubscriptionModal />
       <SubscriptionDetailsDrawer />
       <RenewSubscriptionModal />

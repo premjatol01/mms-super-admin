@@ -6,6 +6,7 @@ import Select from "../../../components/ui/Select";
 export default function LeadFilters({ 
   filters, 
   onFilterChange, 
+  onApplyFilters,
   onResetFilters, 
   leadCount,
   cities = [],
@@ -14,9 +15,31 @@ export default function LeadFilters({
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const drawerRef = useRef(null);
 
+  // Draft filters state inside drawer
+  const [draftFilters, setDraftFilters] = useState({
+    stage: filters.stage || "",
+    status: filters.status || "",
+    city: filters.city || "",
+    dateRange: filters.dateRange || "",
+    converted: filters.converted || "",
+  });
+
   const hasActiveFilters = useMemo(() => {
     return Object.values(filters).some(v => v && v !== "");
   }, [filters]);
+
+  // Sync draft filters when drawer opens
+  useEffect(() => {
+    if (showFilterDrawer) {
+      setDraftFilters({
+        stage: filters.stage || "",
+        status: filters.status || "",
+        city: filters.city || "",
+        dateRange: filters.dateRange || "",
+        converted: filters.converted || "",
+      });
+    }
+  }, [showFilterDrawer, filters]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -34,6 +57,31 @@ export default function LeadFilters({
     return cities.map(c => ({ value: c.toLowerCase(), label: c }));
   }, [cities]);
 
+  const handleDraftChange = (key, value) => {
+    setDraftFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApply = () => {
+    if (onApplyFilters) {
+      onApplyFilters(draftFilters);
+    } else {
+      Object.entries(draftFilters).forEach(([k, v]) => onFilterChange(k, v));
+    }
+    setShowFilterDrawer(false);
+  };
+
+  const handleReset = () => {
+    setDraftFilters({
+      stage: "",
+      status: "",
+      city: "",
+      dateRange: "",
+      converted: "",
+    });
+    onResetFilters();
+    setShowFilterDrawer(false);
+  };
+
   return (
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="flex-1">
@@ -48,7 +96,7 @@ export default function LeadFilters({
           {filters.search && (
             <button
               onClick={() => onFilterChange("search", "")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-theme cursor-pointer"
             >
               <X size={14} />
             </button>
@@ -91,7 +139,7 @@ export default function LeadFilters({
                 <h2 className="text-lg font-semibold text-theme">Filters</h2>
                 <button 
                   onClick={() => setShowFilterDrawer(false)}
-                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors"
+                  className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light rounded-lg transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -100,8 +148,8 @@ export default function LeadFilters({
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <Select 
                   label="Lead Stage" 
-                  value={filters.stage} 
-                  onChange={(v) => onFilterChange("stage", v)} 
+                  value={draftFilters.stage} 
+                  onChange={(v) => handleDraftChange("stage", v)} 
                   options={[
                     { value: "prospect", label: "Prospect" },
                     { value: "new_lead", label: "New Lead" },
@@ -117,8 +165,8 @@ export default function LeadFilters({
                 
                 <Select 
                   label="Status" 
-                  value={filters.status} 
-                  onChange={(v) => onFilterChange("status", v)} 
+                  value={draftFilters.status} 
+                  onChange={(v) => handleDraftChange("status", v)} 
                   options={[
                     { value: "active", label: "Active" },
                     { value: "inactive", label: "Inactive" },
@@ -128,8 +176,8 @@ export default function LeadFilters({
                 
                 <Select 
                   label="Location" 
-                  value={filters.city} 
-                  onChange={(v) => onFilterChange("city", v)} 
+                  value={draftFilters.city} 
+                  onChange={(v) => handleDraftChange("city", v)} 
                   options={cityOptions.length > 0 ? cityOptions : [
                     { value: "mumbai", label: "Mumbai" },
                     { value: "delhi", label: "Delhi" },
@@ -144,8 +192,8 @@ export default function LeadFilters({
                 
                 <Select 
                   label="Created Date" 
-                  value={filters.dateRange} 
-                  onChange={(v) => onFilterChange("dateRange", v)} 
+                  value={draftFilters.dateRange} 
+                  onChange={(v) => handleDraftChange("dateRange", v)} 
                   options={[
                     { value: "today", label: "Today" },
                     { value: "this_week", label: "This Week" },
@@ -156,8 +204,8 @@ export default function LeadFilters({
 
                 <Select 
                   label="Conversion Status" 
-                  value={filters.converted} 
-                  onChange={(v) => onFilterChange("converted", v)} 
+                  value={draftFilters.converted} 
+                  onChange={(v) => handleDraftChange("converted", v)} 
                   options={[
                     { value: "converted", label: "Converted" },
                     { value: "not_converted", label: "Not Converted" },
@@ -170,16 +218,13 @@ export default function LeadFilters({
               <div className="px-6 py-4 border-t border-theme bg-surface flex gap-3">
                 <Button 
                   variant="secondary" 
-                  onClick={() => {
-                    onResetFilters();
-                    setShowFilterDrawer(false);
-                  }}
+                  onClick={handleReset}
                   className="flex-1"
                 >
                   Reset
                 </Button>
                 <Button 
-                  onClick={() => setShowFilterDrawer(false)}
+                  onClick={handleApply}
                   className="flex-1"
                 >
                   Apply Filters

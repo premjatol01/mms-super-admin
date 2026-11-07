@@ -9,7 +9,19 @@ import Input from "../../../components/ui/Input";
 import Textarea from "../../../components/ui/Textarea";
 import Select from "../../../components/ui/Select";
 import ImageUploader from "../../../components/ui/ImageUploader";
-import { Calendar, Users, CheckCircle2 } from "lucide-react";
+import { Calendar, Users } from "lucide-react";
+
+// Helper to strictly extract 10 digits without any country code (strips +91 or leading 91)
+const clean10Digits = (val) => {
+  if (!val) return "";
+  let digits = String(val).replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) {
+    digits = digits.slice(2);
+  } else if (digits.length > 10) {
+    digits = digits.slice(-10);
+  }
+  return digits;
+};
 
 const normalizeDuration = (dur) => {
   if (!dur) return "1_month";
@@ -29,12 +41,15 @@ const getInitialFormData = (restaurant = null) => ({
   state: restaurant?.address?.state || "",
   country: restaurant?.address?.country || "India",
   pincode: restaurant?.address?.pincode || "",
-  phone: restaurant?.phone || "",
-  email: restaurant?.email || "",
-  website: restaurant?.website || "",
+  // Contact Information (Clean 10 digits without 91 code)
+  phone: clean10Digits(restaurant?.phone || restaurant?.contact?.primaryPhone),
+  email: restaurant?.email || restaurant?.contact?.email || "",
+  website: restaurant?.websiteUrl || (typeof restaurant?.website === 'string' ? restaurant?.website : restaurant?.website?.url || restaurant?.website?.subdomain) || "",
+  // Admin Information (Clean 10 digits without 91 code)
   adminName: restaurant?.admin?.name || "",
   adminEmail: restaurant?.admin?.email || "",
-  adminPhone: restaurant?.admin?.phone || "",
+  adminPhone: clean10Digits(restaurant?.admin?.phone),
+  // Subscription Package
   package: restaurant?.subscription?.packageName || restaurant?.subscription?.package || "Basic",
   duration: normalizeDuration(restaurant?.subscription?.duration),
   startDate: restaurant?.subscription?.startDate ? new Date(restaurant.subscription.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -107,10 +122,24 @@ export default function AddEditRestaurantModal() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Restaurant basic validation
     if (!formData.name.trim()) {
       toast.error("Restaurant name is required");
       return;
     }
+    if (!formData.city.trim()) {
+      toast.error("City is required");
+      return;
+    }
+
+    // Contact Information validation
+    const cleanRestPhone = clean10Digits(formData.phone);
+    if (formData.phone && cleanRestPhone.length !== 10) {
+      toast.error("Restaurant phone must be a valid 10-digit mobile number");
+      return;
+    }
+
+    // Admin Information validation
     if (!formData.adminName.trim()) {
       toast.error("Admin name is required");
       return;
@@ -119,12 +148,9 @@ export default function AddEditRestaurantModal() {
       toast.error("Valid admin email is required");
       return;
     }
-    if (!formData.adminPhone.trim()) {
-      toast.error("Admin phone is required");
-      return;
-    }
-    if (!formData.city.trim()) {
-      toast.error("City is required");
+    const cleanAdminPhone = clean10Digits(formData.adminPhone);
+    if (!cleanAdminPhone || cleanAdminPhone.length !== 10) {
+      toast.error("Admin phone must be a valid 10-digit mobile number");
       return;
     }
 
@@ -132,25 +158,34 @@ export default function AddEditRestaurantModal() {
     
     try {
       const submitData = new FormData();
-      submitData.append('name', formData.name);
-      submitData.append('description', formData.description);
-      submitData.append('phone', formData.phone ? `+91 ${formData.phone.replace(/\D/g, '')}` : '');
-      submitData.append('email', formData.email);
-      submitData.append('website', formData.website);
+      submitData.append('name', formData.name.trim());
+      submitData.append('description', formData.description.trim());
+      
+      // Contact Information (Strictly 10 digits, NO country code added in DB)
+      submitData.append('phone', cleanRestPhone);
+      submitData.append('email', formData.email.trim().toLowerCase());
+      submitData.append('website', formData.website.trim());
+      submitData.append('websiteUrl', formData.website.trim());
+      submitData.append('contact', JSON.stringify({
+        primaryPhone: cleanRestPhone,
+        email: formData.email.trim().toLowerCase()
+      }));
+
       submitData.append('status', formData.status);
       
       submitData.append('address', JSON.stringify({
-        city: formData.city, 
-        state: formData.state, 
-        country: formData.country, 
-        pincode: formData.pincode, 
-        fullAddress: formData.address 
+        city: formData.city.trim(), 
+        state: formData.state.trim(), 
+        country: formData.country.trim() || 'India', 
+        pincode: formData.pincode.trim(), 
+        fullAddress: formData.address.trim() 
       }));
       
+      // Admin Information (Strictly 10 digits, NO country code added in DB)
       submitData.append('admin', JSON.stringify({
-        name: formData.adminName, 
-        email: formData.adminEmail, 
-        phone: formData.adminPhone ? `+91 ${formData.adminPhone.replace(/\D/g, '')}` : '' 
+        name: formData.adminName.trim(), 
+        email: formData.adminEmail.trim().toLowerCase(), 
+        phone: cleanAdminPhone 
       }));
       
       submitData.append('subscription', JSON.stringify({
@@ -273,20 +308,20 @@ export default function AddEditRestaurantModal() {
           </div>
         </FormSection>
 
-        <FormSection title="Contact Information">
+        <FormSection title="Contact Information" description="Public contact details for the restaurant">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-theme mb-1.5">Restaurant Phone</label>
               <div className="flex relative">
-                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-theme bg-primary-light/20 text-theme text-sm">
+                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-theme bg-primary-light/20 text-theme text-sm select-none">
                   +91
                 </span>
                 <input
-                  type="text"
+                  type="tel"
                   maxLength={10}
                   pattern="[0-9]{10}"
-                  value={formData.phone.replace('+91', '').trim()}
-                  onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ''))}
+                  value={formData.phone}
+                  onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="w-full px-3 py-2 rounded-r-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
                   placeholder="9876543210"
                 />
@@ -308,7 +343,7 @@ export default function AddEditRestaurantModal() {
           </div>
         </FormSection>
 
-        <FormSection title="Restaurant Admin Information">
+        <FormSection title="Restaurant Admin Information" description="Administrator credentials and phone number">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input 
               label="Admin Name" 
@@ -326,18 +361,20 @@ export default function AddEditRestaurantModal() {
               placeholder="admin@restaurant.com" 
             />
             <div>
-              <label className="block text-sm font-medium text-theme mb-1.5">Admin Phone <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-theme mb-1.5">
+                Admin Phone <span className="text-red-500">*</span>
+              </label>
               <div className="flex relative">
-                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-theme bg-primary-light/20 text-theme text-sm">
+                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-theme bg-primary-light/20 text-theme text-sm select-none">
                   +91
                 </span>
                 <input
-                  type="text"
+                  type="tel"
                   required
                   maxLength={10}
                   pattern="[0-9]{10}"
-                  value={formData.adminPhone.replace('+91', '').trim()}
-                  onChange={(e) => handleChange("adminPhone", e.target.value.replace(/\D/g, ''))}
+                  value={formData.adminPhone}
+                  onChange={(e) => handleChange("adminPhone", e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="w-full px-3 py-2 rounded-r-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
                   placeholder="9876543210"
                 />

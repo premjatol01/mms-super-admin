@@ -92,7 +92,7 @@ export default function ConvertLeadModal() {
       submitData.append('admin', JSON.stringify({
         name: convertData.adminName, 
         email: convertData.adminEmail || '', 
-        phone: convertData.adminPhone ? (convertData.adminPhone.startsWith('+91') ? convertData.adminPhone : `+91 ${convertData.adminPhone.replace(/\D/g, '')}`) : ''
+        phone: convertData.adminPhone ? convertData.adminPhone.replace(/\D/g, '').slice(-10) : ''
       }));
       
       submitData.append('subscription', JSON.stringify({

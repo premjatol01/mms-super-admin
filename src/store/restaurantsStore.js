@@ -62,6 +62,10 @@ export const useRestaurantsStore = create((set, get) => ({
   },
 
   // Filters
+  setFilters: (newFilters) => set((state) => ({ 
+    filters: { ...state.filters, ...newFilters },
+    pagination: { ...state.pagination, page: 1 }
+  })),
   setFilter: (key, value) => set((state) => ({ 
     filters: { ...state.filters, [key]: value },
     pagination: { ...state.pagination, page: 1 }

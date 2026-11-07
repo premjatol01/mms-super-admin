@@ -65,6 +65,14 @@ export const useLeadsStore = create((set, get) => ({
   },
 
   // Filters
+  setFilters: (newFilters) => {
+    set((state) => ({ 
+      filters: { ...state.filters, ...newFilters },
+      pagination: { ...state.pagination, page: 1 }
+    }));
+    get().fetchLeads();
+  },
+
   setFilter: (key, value) => {
     set((state) => ({ 
       filters: { ...state.filters, [key]: value },

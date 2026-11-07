@@ -1,11 +1,17 @@
 import { create } from "zustand";
-import { initialSubscriptions } from "../pages/subscriptions/data/subscriptionData";
-import { getPackageByName } from "../pages/subscriptions/data/packageHelper";
+import { subscriptionsAPI } from "../api/subscriptions";
+import { toast } from "sonner";
 
 export const useSubscriptionsStore = create((set, get) => ({
-  subscriptions: initialSubscriptions,
+  subscriptions: [],
   loading: false,
   error: null,
+  summary: {
+    total: 0,
+    active: 0,
+    expiring: 0,
+    expired: 0,
+  },
   filters: {
     search: "",
     status: "",
@@ -15,7 +21,7 @@ export const useSubscriptionsStore = create((set, get) => ({
   pagination: {
     page: 1,
     limit: 10,
-    total: initialSubscriptions.length,
+    total: 0,
   },
   selectedSubscription: null,
   editingSubscription: null,
@@ -26,187 +32,201 @@ export const useSubscriptionsStore = create((set, get) => ({
   showRenewModal: false,
   showChangePackageModal: false,
 
+  // Fetch from API
+  fetchSubscriptions: async () => {
+    const { filters, pagination } = get();
+    set({ loading: true, error: null });
+
+    try {
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      if (filters.search) params.search = filters.search;
+      if (filters.status) params.status = filters.status;
+      if (filters.package) params.package = filters.package;
+      if (filters.duration) params.duration = filters.duration;
+
+      const res = await subscriptionsAPI.getSubscriptions(params);
+      
+      // axiosClient response interceptor returns response.data
+      const rawList = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res)
+        ? res
+        : [];
+
+      const normalizedSubs = rawList.map((s) => ({
+        ...s,
+        id: s._id || s.id,
+      }));
+
+      const totalCount = res?.pagination?.total ?? res?.data?.pagination?.total ?? normalizedSubs.length;
+      const summaryData = res?.summary || res?.data?.summary || get().summary;
+
+      set({
+        subscriptions: normalizedSubs,
+        pagination: {
+          ...pagination,
+          total: totalCount,
+        },
+        summary: summaryData,
+        loading: false,
+      });
+    } catch (err) {
+      console.error("Failed to fetch subscriptions:", err);
+      set({ 
+        loading: false, 
+        error: err.response?.data?.message || err.message || "Failed to load subscriptions" 
+      });
+    }
+  },
+
   // Filters
-  setFilter: (key, value) => set((state) => ({ 
-    filters: { ...state.filters, [key]: value },
-    pagination: { ...state.pagination, page: 1 }
-  })),
-  resetFilters: () => set({ 
-    filters: { search: "", status: "", package: "", duration: "" },
-    pagination: { ...get().pagination, page: 1 }
-  }),
-  
+  setFilter: (key, value) => {
+    set((state) => ({
+      filters: { ...state.filters, [key]: value },
+      pagination: { ...state.pagination, page: 1 },
+    }));
+  },
+
+  setFilters: (newFilters) => {
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+      pagination: { ...state.pagination, page: 1 },
+    }));
+  },
+
+  resetFilters: () => {
+    set({
+      filters: { search: "", status: "", package: "", duration: "" },
+      pagination: { ...get().pagination, page: 1 },
+    });
+  },
+
   // Pagination
-  setPage: (page) => set((state) => ({ pagination: { ...state.pagination, page } })),
-  setLimit: (limit) => set((state) => ({ pagination: { ...state.pagination, limit, page: 1 } })),
+  setPage: (page) => {
+    set((state) => ({ pagination: { ...state.pagination, page } }));
+  },
+
+  setLimit: (limit) => {
+    set((state) => ({ pagination: { ...state.pagination, limit, page: 1 } }));
+  },
 
   // Modal controls
   openAssignModal: () => set({ showAssignModal: true, editingSubscription: null }),
   closeAssignModal: () => set({ showAssignModal: false, editingSubscription: null }),
-  
+
   openDetails: (sub) => set({ selectedSubscription: sub, showDetailsDrawer: true }),
   closeDetails: () => set({ selectedSubscription: null, showDetailsDrawer: false }),
 
-  showConfirm: (action, sub) => set({ 
-    showConfirmModal: true, 
-    confirmAction: action, 
-    selectedSubscription: sub 
-  }),
-  hideConfirm: () => set({ 
-    showConfirmModal: false, 
-    confirmAction: null, 
-    selectedSubscription: null 
+  showConfirm: (action, sub) => set({
+    showConfirmModal: true,
+    confirmAction: action,
+    selectedSubscription: sub,
   }),
 
-  // Renew & Change Package modals
+  hideConfirm: () => set({
+    showConfirmModal: false,
+    confirmAction: null,
+    selectedSubscription: null,
+  }),
+
   openRenewModal: (sub) => set({ showRenewModal: true, selectedSubscription: sub }),
   closeRenewModal: () => set({ showRenewModal: false }),
+
   openChangePackageModal: (sub) => set({ showChangePackageModal: true, selectedSubscription: sub }),
   closeChangePackageModal: () => set({ showChangePackageModal: false }),
 
-  // CRUD operations
-  assignSubscription: (subData) => set((state) => {
-    const newId = `SUB-${String(state.subscriptions.length + 1).padStart(3, '0')}`;
-    const pkg = getPackageByName(subData.packageName);
-    const today = new Date().toISOString().split('T')[0];
-    const endDate = new Date(subData.startDate);
-    endDate.setDate(endDate.getDate() + subData.duration);
-    
-    return {
-      subscriptions: [{ 
-        ...subData,
-        id: newId,
-        packageId: pkg?.id || "",
-        durationDisplay: `${subData.duration} Days`,
-        endDate: endDate.toISOString().split('T')[0],
-        status: "active",
-        features: pkg?.features || [],
-        createdAt: today,
-        updatedAt: today,
-      }, ...state.subscriptions],
-      showAssignModal: false,
-    };
-  }),
+  // API Mutating Actions
+  assignSubscription: async (subData) => {
+    try {
+      const res = await subscriptionsAPI.assignSubscription(subData);
+      const msg = res?.message || res?.data?.message || "Subscription assigned successfully";
+      toast.success(msg);
+      set({ showAssignModal: false });
+      await get().fetchSubscriptions();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to assign subscription";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
 
-  renewSubscription: (id, duration) => set((state) => {
-    const sub = state.subscriptions.find(s => s.id === id);
-    if (!sub) return state;
-    
-    const today = new Date().toISOString().split('T')[0];
-    const currentEndDate = new Date(sub.endDate);
-    const newEndDate = new Date(currentEndDate);
-    newEndDate.setDate(newEndDate.getDate() + duration);
-    
-    return {
-      subscriptions: state.subscriptions.map(s => s.id === id ? {
-        ...s,
-        duration: s.duration + duration,
-        durationDisplay: `${s.duration + duration} Days`,
-        endDate: newEndDate.toISOString().split('T')[0],
-        status: "active",
-        updatedAt: today,
-      } : s),
-      selectedSubscription: state.selectedSubscription?.id === id ? {
-        ...state.selectedSubscription,
-        duration: state.selectedSubscription.duration + duration,
-        durationDisplay: `${state.selectedSubscription.duration + duration} Days`,
-        endDate: newEndDate.toISOString().split('T')[0],
-        status: "active",
-        updatedAt: today,
-      } : state.selectedSubscription,
-    };
-  }),
+  renewSubscription: async (id, durationOrData) => {
+    try {
+      const payload = typeof durationOrData === 'object' 
+        ? durationOrData 
+        : { duration: durationOrData, durationDays: durationOrData };
+      const res = await subscriptionsAPI.renewSubscription(id, payload);
+      const msg = res?.message || res?.data?.message || "Subscription renewed successfully";
+      toast.success(msg);
+      set({ showRenewModal: false });
+      await get().fetchSubscriptions();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to renew subscription";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
 
-  changePackage: (id, newPackageName) => set((state) => {
-    const pkg = getPackageByName(newPackageName);
-    const today = new Date().toISOString().split('T')[0];
-    
-    return {
-      subscriptions: state.subscriptions.map(s => s.id === id ? {
-        ...s,
-        packageName: newPackageName,
-        packageId: pkg?.id || "",
-        features: pkg?.features || [],
-        updatedAt: today,
-      } : s),
-      selectedSubscription: state.selectedSubscription?.id === id ? {
-        ...state.selectedSubscription,
-        packageName: newPackageName,
-        packageId: pkg?.id || "",
-        features: pkg?.features || [],
-        updatedAt: today,
-      } : state.selectedSubscription,
-    };
-  }),
+  changePackage: async (id, newPackageNameOrData) => {
+    try {
+      const payload = typeof newPackageNameOrData === 'object'
+        ? newPackageNameOrData
+        : { packageName: newPackageNameOrData };
+      const res = await subscriptionsAPI.changePackage(id, payload);
+      const msg = res?.message || res?.data?.message || "Package changed successfully";
+      toast.success(msg);
+      set({ showChangePackageModal: false });
+      await get().fetchSubscriptions();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to change package";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
 
-  cancelSubscription: (id) => set((state) => {
-    const today = new Date().toISOString().split('T')[0];
-    return {
-      subscriptions: state.subscriptions.map(s => s.id === id ? {
-        ...s,
-        status: "cancelled",
-        updatedAt: today,
-      } : s),
-      selectedSubscription: state.selectedSubscription?.id === id ? {
-        ...state.selectedSubscription,
-        status: "cancelled",
-        updatedAt: today,
-      } : state.selectedSubscription,
-    };
-  }),
+  cancelSubscription: async (id) => {
+    try {
+      const res = await subscriptionsAPI.cancelSubscription(id);
+      const msg = res?.message || res?.data?.message || "Subscription cancelled";
+      toast.success(msg);
+      set({ showConfirmModal: false, showDetailsDrawer: false });
+      await get().fetchSubscriptions();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to cancel subscription";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
 
-  reactivateSubscription: (id) => set((state) => {
-    const today = new Date().toISOString().split('T')[0];
-    return {
-      subscriptions: state.subscriptions.map(s => s.id === id ? {
-        ...s,
-        status: "active",
-        updatedAt: today,
-      } : s),
-      selectedSubscription: state.selectedSubscription?.id === id ? {
-        ...state.selectedSubscription,
-        status: "active",
-        updatedAt: today,
-      } : state.selectedSubscription,
-    };
-  }),
+  reactivateSubscription: async (id) => {
+    try {
+      const res = await subscriptionsAPI.reactivateSubscription(id);
+      const msg = res?.message || res?.data?.message || "Subscription reactivated successfully";
+      toast.success(msg);
+      set({ showConfirmModal: false, showDetailsDrawer: false });
+      await get().fetchSubscriptions();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to reactivate subscription";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
 
   getFilteredSubscriptions: () => {
-    const { subscriptions, filters } = get();
-    
-    return subscriptions.filter(sub => {
-      const searchMatch = !filters.search || 
-        sub.restaurantName.toLowerCase().includes(filters.search.toLowerCase()) ||
-        sub.adminName.toLowerCase().includes(filters.search.toLowerCase()) ||
-        sub.adminEmail.toLowerCase().includes(filters.search.toLowerCase()) ||
-        sub.packageName.toLowerCase().includes(filters.search.toLowerCase()) ||
-        sub.id.toLowerCase().includes(filters.search.toLowerCase());
-      
-      const statusMatch = !filters.status || sub.status === filters.status;
-      const packageMatch = !filters.package || sub.packageName === filters.package;
-      const durationMatch = !filters.duration || sub.duration === parseInt(filters.duration);
-      
-      return searchMatch && statusMatch && packageMatch && durationMatch;
-    });
+    return get().subscriptions;
   },
 
   getSummary: () => {
-    const subscriptions = get().subscriptions;
-    const now = new Date();
-    
-    // Calculate expiring (within 7 days)
-    const expiringSubscriptions = subscriptions.filter(sub => {
-      if (sub.status !== "active") return false;
-      const endDate = new Date(sub.endDate);
-      const diff = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-      return diff > 0 && diff <= 7;
-    });
-
-    return {
-      total: subscriptions.length,
-      active: subscriptions.filter(s => s.status === "active").length,
-      expiring: expiringSubscriptions.length,
-      expired: subscriptions.filter(s => s.status === "expired" || s.status === "cancelled").length,
-    };
+    return get().summary;
   },
 }));
