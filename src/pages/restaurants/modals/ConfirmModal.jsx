@@ -14,7 +14,7 @@ export default function ConfirmModal() {
 
   const getContent = () => {
     switch (confirmAction) {
-      case "toggleStatus":
+      case "toggleStatus": {
         const isactivating = selectedRestaurant?.status === "inactive";
         return {
           title: isactivating ? "Activate Restaurant?" : "Deactivate Restaurant?",
@@ -24,6 +24,7 @@ export default function ConfirmModal() {
           confirmLabel: isactivating ? "Activate" : "Deactivate",
           variant: "danger",
         };
+      }
       default:
         return {
           title: "Confirm Action",

@@ -23,6 +23,7 @@ export const useRestaurantsStore = create((set, get) => ({
   selectedRestaurants: [],
   showAddModal: false,
   showDetailsDrawer: false,
+  detailsDrawerTab: "overview",
   showConfirmModal: false,
   confirmAction: null,
   selectedRestaurant: null,
@@ -98,8 +99,13 @@ export const useRestaurantsStore = create((set, get) => ({
   openEditModal: (restaurant) => set({ showAddModal: true, editingRestaurant: restaurant }),
   closeEditModal: () => set({ showAddModal: false, editingRestaurant: null }),
   
-  openDetails: (restaurant) => set({ selectedRestaurant: restaurant, showDetailsDrawer: true }),
-  closeDetails: () => set({ selectedRestaurant: null, showDetailsDrawer: false }),
+  openDetails: (restaurant, tab = "overview") => set({ 
+    selectedRestaurant: restaurant, 
+    showDetailsDrawer: true,
+    detailsDrawerTab: tab || "overview"
+  }),
+  setDetailsDrawerTab: (tab) => set({ detailsDrawerTab: tab }),
+  closeDetails: () => set({ selectedRestaurant: null, showDetailsDrawer: false, detailsDrawerTab: "overview" }),
 
   showConfirm: (action, restaurant) => set({ 
     showConfirmModal: true, 

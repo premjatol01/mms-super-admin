@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useRestaurantsStore } from "../../store/restaurantsStore";
 import Button from "../../components/ui/Button";
@@ -46,13 +45,11 @@ export default function RestaurantsPage() {
   };
 
   const handleManageSubscription = (restaurant) => {
-    toast.info("Managing subscription for " + restaurant.name);
-    openDetails(restaurant);
+    openDetails(restaurant, "subscription");
   };
 
   const handleManageFeatures = (restaurant) => {
-    toast.info("Managing features for " + restaurant.name);
-    openDetails(restaurant);
+    openDetails(restaurant, "features");
   };
 
   const handleToggleStatus = (restaurant) => {
@@ -75,7 +72,7 @@ export default function RestaurantsPage() {
       } else {
         toast.error(data.message || 'Failed to send invite', { id: "invite" });
       }
-    } catch (err) {
+    } catch {
       toast.error('Network error', { id: "invite" });
     }
   };
@@ -84,7 +81,7 @@ export default function RestaurantsPage() {
     try {
       await bulkUpdateStatus(selectedRestaurants, 'active');
       toast.success(`Activated ${selectedRestaurants.length} restaurants`);
-    } catch (err) {
+    } catch {
       toast.error('Failed to activate restaurants');
     }
   };
@@ -93,7 +90,7 @@ export default function RestaurantsPage() {
     try {
       await bulkUpdateStatus(selectedRestaurants, 'inactive');
       toast.success(`Deactivated ${selectedRestaurants.length} restaurants`);
-    } catch (err) {
+    } catch {
       toast.error('Failed to deactivate restaurants');
     }
   };
