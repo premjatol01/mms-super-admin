@@ -6,15 +6,16 @@ import Modal from "../../components/ui/Modal";
 import Select from "../../components/ui/Select";
 import ImageUploader from "../../components/ui/ImageUploader";
 import Pagination from "../restaurants/components/Pagination";
-import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
+import { Plus, Edit2, Loader2, ToggleLeft, ToggleRight, RotateCcw } from "lucide-react";
 import { masterMenuAPI } from "../../api/masterMenu";
 import { toast } from "sonner";
 
 export default function MasterMenuPage() {
   const [activeTab, setActiveTab] = useState("categories");
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
   const [categories, setCategories] = useState([]);
@@ -52,6 +53,8 @@ export default function MasterMenuPage() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSearchQuery("");
+    setCategoryFilter("all");
+    setStatusFilter("all");
   };
 
   const handleSearchChange = (val) => {
@@ -63,15 +66,64 @@ export default function MasterMenuPage() {
     }
   };
 
+  const handleCategoryFilterChange = (val) => {
+    setCategoryFilter(val || "all");
+    setItemPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleStatusFilterChange = (val) => {
+    setStatusFilter(val || "all");
+    if (activeTab === "categories") {
+      setCategoryPagination(prev => ({ ...prev, page: 1 }));
+    } else {
+      setItemPagination(prev => ({ ...prev, page: 1 }));
+    }
+  };
+
+  const hasActiveFilters = searchQuery.trim() !== "" || statusFilter !== "all" || (activeTab === "items" && categoryFilter !== "all");
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter("all");
+    setStatusFilter("all");
+    if (activeTab === "categories") {
+      setCategoryPagination(prev => ({ ...prev, page: 1 }));
+    } else {
+      setItemPagination(prev => ({ ...prev, page: 1 }));
+    }
+  };
+
+  const categoryFilterOptions = useMemo(() => {
+    return [
+      { value: "all", label: "All Categories" },
+      ...categories.map(c => ({ value: c._id, label: c.name }))
+    ];
+  }, [categories]);
+
+  const statusFilterOptions = [
+    { value: "all", label: "All Status" },
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" }
+  ];
+
   // Filtered & Paginated Categories
   const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return categories;
-    const q = searchQuery.toLowerCase();
-    return categories.filter(c => 
-      c.name?.toLowerCase().includes(q) || 
-      c.description?.toLowerCase().includes(q)
-    );
-  }, [categories, searchQuery]);
+    let result = categories;
+
+    if (statusFilter !== "all") {
+      result = result.filter(c => (c.status || "active") === statusFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(c => 
+        c.name?.toLowerCase().includes(q) || 
+        c.description?.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [categories, statusFilter, searchQuery]);
 
   const paginatedCategories = useMemo(() => {
     const start = (categoryPagination.page - 1) * categoryPagination.limit;
@@ -80,13 +132,30 @@ export default function MasterMenuPage() {
 
   // Filtered & Paginated Items
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
-    return items.filter(item => 
-      item.name?.toLowerCase().includes(q) || 
-      item.categoryId?.name?.toLowerCase().includes(q)
-    );
-  }, [items, searchQuery]);
+    let result = items;
+
+    if (categoryFilter !== "all") {
+      result = result.filter(item => {
+        const catId = item.categoryId?._id || item.categoryId;
+        return catId === categoryFilter;
+      });
+    }
+
+    if (statusFilter !== "all") {
+      result = result.filter(item => (item.status || "active") === statusFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(item => 
+        item.name?.toLowerCase().includes(q) || 
+        item.description?.toLowerCase().includes(q) || 
+        item.categoryId?.name?.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [items, categoryFilter, statusFilter, searchQuery]);
 
   const paginatedItems = useMemo(() => {
     const start = (itemPagination.page - 1) * itemPagination.limit;
@@ -95,19 +164,40 @@ export default function MasterMenuPage() {
 
   const handleAdd = () => {
     setSelectedItem(null);
-    setFormData({});
+    setFormData({ status: 'active' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item) => {
     setSelectedItem(item);
-    setFormData(item);
+    setFormData({ ...item, status: item.status || 'active' });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (item) => {
-    setSelectedItem(item);
-    setIsDeleteModalOpen(true);
+  const handleToggleCategoryStatus = async (cat) => {
+    const newStatus = (cat.status === 'active' || !cat.status) ? 'inactive' : 'active';
+    try {
+      const submitData = new FormData();
+      submitData.append('status', newStatus);
+      await masterMenuAPI.updateCategory(cat._id, submitData);
+      setCategories(prev => prev.map(c => c._id === cat._id ? { ...c, status: newStatus } : c));
+      toast.success(`Category "${cat.name}" marked as ${newStatus}`);
+    } catch (error) {
+      toast.error(error.message || "Failed to update category status");
+    }
+  };
+
+  const handleToggleItemStatus = async (item) => {
+    const newStatus = (item.status === 'active' || !item.status) ? 'inactive' : 'active';
+    try {
+      const submitData = new FormData();
+      submitData.append('status', newStatus);
+      await masterMenuAPI.updateItem(item._id, submitData);
+      setItems(prev => prev.map(i => i._id === item._id ? { ...i, status: newStatus } : i));
+      toast.success(`Item "${item.name}" marked as ${newStatus}`);
+    } catch (error) {
+      toast.error(error.message || "Failed to update item status");
+    }
   };
 
   const handleSave = async () => {
@@ -157,6 +247,7 @@ export default function MasterMenuPage() {
         const submitData = new FormData();
         submitData.append('name', formData.name.trim());
         submitData.append('categoryId', catId);
+        if (formData.description !== undefined) submitData.append('description', formData.description);
         if (formData.status) submitData.append('status', formData.status);
         
         if (formData.imageFile) {
@@ -179,25 +270,6 @@ export default function MasterMenuPage() {
       fetchData();
     } catch (error) {
       toast.error(error.message || "Failed to save");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const confirmDelete = async () => {
-    setIsSaving(true);
-    try {
-      if (activeTab === "categories") {
-        await masterMenuAPI.deleteCategory(selectedItem._id);
-        toast.success("Category deleted successfully");
-      } else {
-        await masterMenuAPI.deleteItem(selectedItem._id);
-        toast.success("Item deleted successfully");
-      }
-      setIsDeleteModalOpen(false);
-      fetchData();
-    } catch (error) {
-      toast.error(error.message || "Failed to delete");
     } finally {
       setIsSaving(false);
     }
@@ -243,16 +315,53 @@ export default function MasterMenuPage() {
           </button>
         </div>
 
-        {/* Search & Add Button Bar (Add button moved close to Search Input) */}
+        {/* Search & Filter Toolbar */}
         <div className="flex-none p-4 border-b border-theme flex flex-wrap items-center justify-between gap-3 bg-surface">
-          <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-            <div className="w-72">
+          <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+            <div className="w-64 min-w-[180px]">
               <SearchInput 
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder={`Search ${activeTab === "categories" ? "categories" : "menu items"}...`} 
               />
             </div>
+
+            {/* Category Filter (Menu Items Tab Only) */}
+            {activeTab === "items" && (
+              <div className="w-52">
+                <Select
+                  value={categoryFilter}
+                  onChange={handleCategoryFilterChange}
+                  options={categoryFilterOptions}
+                  placeholder="Filter Category..."
+                  isSearchable={true}
+                />
+              </div>
+            )}
+
+            {/* Status Filter */}
+            <div className="w-40">
+              <Select
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                options={statusFilterOptions}
+                placeholder="Filter Status..."
+                isSearchable={false}
+              />
+            </div>
+
+            {/* Reset Filters */}
+            {hasActiveFilters && (
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-secondary hover:text-theme bg-primary-light/20 hover:bg-primary-light/40 rounded-lg transition-colors cursor-pointer h-[38px]"
+                title="Reset all filters"
+              >
+                <RotateCcw size={14} />
+                <span>Reset</span>
+              </button>
+            )}
+
             <Button onClick={handleAdd} className="flex items-center gap-1.5 whitespace-nowrap">
               <Plus size={18} />
               Add {activeTab === "categories" ? "Category" : "Menu Item"}
@@ -272,9 +381,9 @@ export default function MasterMenuPage() {
               <p className="text-sm text-secondary">Loading {activeTab === "categories" ? "categories" : "menu items"}...</p>
             </div>
           ) : activeTab === "categories" ? (
-            <CategoriesTable categories={paginatedCategories} onEdit={handleEdit} onDelete={handleDelete} />
+            <CategoriesTable categories={paginatedCategories} onEdit={handleEdit} onToggleStatus={handleToggleCategoryStatus} hasActiveFilters={hasActiveFilters} />
           ) : (
-            <ItemsTable items={paginatedItems} onEdit={handleEdit} onDelete={handleDelete} />
+            <ItemsTable items={paginatedItems} onEdit={handleEdit} onToggleStatus={handleToggleItemStatus} hasActiveFilters={hasActiveFilters} />
           )}
         </div>
 
@@ -328,6 +437,15 @@ export default function MasterMenuPage() {
                 onChange={(e) => setFormData({...formData, description: e.target.value})} 
                 placeholder="Short description" 
               />
+              <Select 
+                label="Status" 
+                value={formData.status || 'active'}
+                onChange={(val) => setFormData({...formData, status: val})}
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' }
+                ]}
+              />
             </>
           ) : (
             <>
@@ -358,6 +476,21 @@ export default function MasterMenuPage() {
                   You must create an active Category first before adding a Menu Item.
                 </div>
               )}
+              <Input 
+                label="Description" 
+                value={formData.description || ''} 
+                onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                placeholder="Short culinary description" 
+              />
+              <Select 
+                label="Status" 
+                value={formData.status || 'active'}
+                onChange={(val) => setFormData({...formData, status: val})}
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' }
+                ]}
+              />
             </>
           )}
           <div className="flex justify-end gap-2 mt-6">
@@ -366,28 +499,11 @@ export default function MasterMenuPage() {
           </div>
         </div>
       </Modal>
-
-      {/* Delete Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title="Confirm Delete"
-      >
-        <div className="space-y-4">
-          <p className="text-theme">
-            Are you sure you want to delete <span className="font-semibold">{selectedItem?.name}</span>? This action cannot be undone.
-          </p>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
-            <Button variant="danger" onClick={confirmDelete} loading={isSaving}>Delete</Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
 
-function CategoriesTable({ categories, onEdit, onDelete }) {
+function CategoriesTable({ categories, onEdit, onToggleStatus, hasActiveFilters }) {
   if (!categories.length) {
     return (
       <table className="w-full text-left border-collapse">
@@ -402,7 +518,7 @@ function CategoriesTable({ categories, onEdit, onDelete }) {
         <tbody>
           <tr>
             <td colSpan={4} className="px-6 py-20 text-center text-secondary">
-              No categories found.
+              {hasActiveFilters ? "No categories found matching your filters." : "No categories found."}
             </td>
           </tr>
         </tbody>
@@ -441,29 +557,42 @@ function CategoriesTable({ categories, onEdit, onDelete }) {
             </td>
             <td className="px-6 py-3.5 text-sm text-secondary">{cat.description || "-"}</td>
             <td className="px-6 py-3.5 text-sm">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                cat.status === 'active' || !cat.status 
-                  ? 'bg-green-500/15 text-green-600 dark:text-green-400' 
-                  : 'bg-red-500/15 text-red-600 dark:text-red-400'
-              }`}>
+              <button
+                onClick={() => onToggleStatus(cat)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-85 ${
+                  cat.status === 'active' || !cat.status 
+                    ? 'bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/25' 
+                    : 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25'
+                }`}
+                title={`Click to mark as ${cat.status === 'active' || !cat.status ? 'inactive' : 'active'}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${cat.status === 'active' || !cat.status ? 'bg-green-500' : 'bg-red-500'}`}></span>
                 {cat.status || 'active'}
-              </span>
+              </button>
             </td>
             <td className="px-6 py-3.5 text-right">
-              <div className="flex items-center justify-end gap-1">
+              <div className="flex items-center justify-end gap-1.5">
+                <button 
+                  onClick={() => onToggleStatus(cat)} 
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
+                    cat.status === 'active' || !cat.status
+                      ? 'text-green-600 hover:bg-green-500/10 dark:text-green-400'
+                      : 'text-secondary hover:text-red-500 hover:bg-red-500/10'
+                  }`}
+                  title={cat.status === 'active' || !cat.status ? 'Deactivate Category' : 'Activate Category'}
+                >
+                  {cat.status === 'active' || !cat.status ? (
+                    <ToggleRight size={20} className="text-green-600 dark:text-green-400" />
+                  ) : (
+                    <ToggleLeft size={20} className="text-secondary" />
+                  )}
+                </button>
                 <button 
                   onClick={() => onEdit(cat)} 
                   className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light/40 rounded-lg transition-colors cursor-pointer"
                   title="Edit Category"
                 >
                   <Edit2 size={16} />
-                </button>
-                <button 
-                  onClick={() => onDelete(cat)} 
-                  className="p-1.5 text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                  title="Delete Category"
-                >
-                  <Trash2 size={16} />
                 </button>
               </div>
             </td>
@@ -474,7 +603,7 @@ function CategoriesTable({ categories, onEdit, onDelete }) {
   );
 }
 
-function ItemsTable({ items, onEdit, onDelete }) {
+function ItemsTable({ items, onEdit, onToggleStatus, hasActiveFilters }) {
   if (!items.length) {
     return (
       <table className="w-full text-left border-collapse">
@@ -482,14 +611,15 @@ function ItemsTable({ items, onEdit, onDelete }) {
           <tr>
             <th className="px-6 py-3.5 text-sm font-medium text-theme">Item Name</th>
             <th className="px-6 py-3.5 text-sm font-medium text-theme">Category</th>
+            <th className="px-6 py-3.5 text-sm font-medium text-theme">Description</th>
             <th className="px-6 py-3.5 text-sm font-medium text-theme">Status</th>
             <th className="px-6 py-3.5 text-sm font-medium text-theme text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td colSpan={4} className="px-6 py-20 text-center text-secondary">
-              No menu items found.
+            <td colSpan={5} className="px-6 py-20 text-center text-secondary">
+              {hasActiveFilters ? "No menu items found matching your filters." : "No menu items found."}
             </td>
           </tr>
         </tbody>
@@ -503,6 +633,7 @@ function ItemsTable({ items, onEdit, onDelete }) {
         <tr>
           <th className="px-6 py-3.5 text-sm font-medium text-theme">Item Name</th>
           <th className="px-6 py-3.5 text-sm font-medium text-theme">Category</th>
+          <th className="px-6 py-3.5 text-sm font-medium text-theme">Description</th>
           <th className="px-6 py-3.5 text-sm font-medium text-theme">Status</th>
           <th className="px-6 py-3.5 text-sm font-medium text-theme text-right">Actions</th>
         </tr>
@@ -531,30 +662,46 @@ function ItemsTable({ items, onEdit, onDelete }) {
                 {item.categoryId?.name || 'Uncategorized'}
               </span>
             </td>
+            <td className="px-6 py-3.5 text-sm text-secondary max-w-xs truncate" title={item.description || ''}>
+              {item.description || "-"}
+            </td>
             <td className="px-6 py-3.5 text-sm">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                item.status === 'active' || !item.status 
-                  ? 'bg-green-500/15 text-green-600 dark:text-green-400' 
-                  : 'bg-red-500/15 text-red-600 dark:text-red-400'
-              }`}>
+              <button
+                onClick={() => onToggleStatus(item)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-85 ${
+                  item.status === 'active' || !item.status 
+                    ? 'bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/25' 
+                    : 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25'
+                }`}
+                title={`Click to mark as ${item.status === 'active' || !item.status ? 'inactive' : 'active'}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'active' || !item.status ? 'bg-green-500' : 'bg-red-500'}`}></span>
                 {item.status || 'active'}
-              </span>
+              </button>
             </td>
             <td className="px-6 py-3.5 text-right">
-              <div className="flex items-center justify-end gap-1">
+              <div className="flex items-center justify-end gap-1.5">
+                <button 
+                  onClick={() => onToggleStatus(item)} 
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
+                    item.status === 'active' || !item.status
+                      ? 'text-green-600 hover:bg-green-500/10 dark:text-green-400'
+                      : 'text-secondary hover:text-red-500 hover:bg-red-500/10'
+                  }`}
+                  title={item.status === 'active' || !item.status ? 'Deactivate Item' : 'Activate Item'}
+                >
+                  {item.status === 'active' || !item.status ? (
+                    <ToggleRight size={20} className="text-green-600 dark:text-green-400" />
+                  ) : (
+                    <ToggleLeft size={20} className="text-secondary" />
+                  )}
+                </button>
                 <button 
                   onClick={() => onEdit(item)} 
                   className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light/40 rounded-lg transition-colors cursor-pointer"
                   title="Edit Item"
                 >
                   <Edit2 size={16} />
-                </button>
-                <button 
-                  onClick={() => onDelete(item)} 
-                  className="p-1.5 text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                  title="Delete Item"
-                >
-                  <Trash2 size={16} />
                 </button>
               </div>
             </td>
