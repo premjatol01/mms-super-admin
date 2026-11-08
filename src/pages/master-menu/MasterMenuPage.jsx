@@ -114,11 +114,30 @@ export default function MasterMenuPage() {
     setIsSaving(true);
     try {
       if (activeTab === "categories") {
+        if (!formData.name?.trim()) {
+          toast.error("Category name is required");
+          setIsSaving(false);
+          return;
+        }
+
+        const submitData = new FormData();
+        submitData.append('name', formData.name.trim());
+        if (formData.description) submitData.append('description', formData.description);
+        if (formData.status) submitData.append('status', formData.status);
+
+        if (formData.imageFile) {
+          submitData.append('image', formData.imageFile);
+        } else if (formData.image) {
+          submitData.append('image', formData.image);
+        } else if (selectedItem && (formData.image === null || formData.image === '')) {
+          submitData.append('image', '');
+        }
+
         if (selectedItem) {
-          await masterMenuAPI.updateCategory(selectedItem._id, formData);
+          await masterMenuAPI.updateCategory(selectedItem._id, submitData);
           toast.success("Category updated successfully");
         } else {
-          await masterMenuAPI.createCategory(formData);
+          await masterMenuAPI.createCategory(submitData);
           toast.success("Category created successfully");
         }
       } else {
@@ -128,9 +147,15 @@ export default function MasterMenuPage() {
           setIsSaving(false);
           return;
         }
+
+        if (!formData.name?.trim()) {
+          toast.error("Item name is required");
+          setIsSaving(false);
+          return;
+        }
         
         const submitData = new FormData();
-        if (formData.name) submitData.append('name', formData.name);
+        submitData.append('name', formData.name.trim());
         submitData.append('categoryId', catId);
         if (formData.status) submitData.append('status', formData.status);
         
@@ -138,6 +163,8 @@ export default function MasterMenuPage() {
           submitData.append('image', formData.imageFile);
         } else if (formData.image) {
           submitData.append('image', formData.image);
+        } else if (selectedItem && (formData.image === null || formData.image === '')) {
+          submitData.append('image', '');
         }
 
         if (selectedItem) {
@@ -282,6 +309,12 @@ export default function MasterMenuPage() {
         <div className="space-y-4">
           {activeTab === "categories" ? (
             <>
+              <ImageUploader 
+                label="Category Image" 
+                hint="Upload file or internet URL"
+                value={formData.image ? (formData.image.startsWith('http') || formData.image.startsWith('blob:') ? formData.image : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${formData.image}`) : ''} 
+                onChange={(url, file) => setFormData({...formData, image: url, imageFile: file})} 
+              />
               <Input 
                 label="Category Name" 
                 value={formData.name || ''} 
@@ -300,6 +333,7 @@ export default function MasterMenuPage() {
             <>
               <ImageUploader 
                 label="Item Image" 
+                hint="Upload file or internet URL"
                 value={formData.image ? (formData.image.startsWith('http') || formData.image.startsWith('blob:') ? formData.image : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${formData.image}`) : ''} 
                 onChange={(url, file) => setFormData({...formData, image: url, imageFile: file})} 
               />
@@ -389,7 +423,22 @@ function CategoriesTable({ categories, onEdit, onDelete }) {
       <tbody>
         {categories.map((cat) => (
           <tr key={cat._id} className="border-b border-theme hover:bg-primary-light/10 transition-colors">
-            <td className="px-6 py-3.5 text-sm font-semibold text-theme">{cat.name}</td>
+            <td className="px-6 py-3.5 text-sm font-semibold text-theme">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg overflow-hidden flex items-center justify-center text-primary font-medium shrink-0 border border-theme">
+                  {cat.image ? (
+                    <img 
+                      src={cat.image.startsWith('http') ? cat.image : `${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace('/api', '')}${cat.image}`} 
+                      alt={cat.name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    (cat.name || 'C').charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span>{cat.name}</span>
+              </div>
+            </td>
             <td className="px-6 py-3.5 text-sm text-secondary">{cat.description || "-"}</td>
             <td className="px-6 py-3.5 text-sm">
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${

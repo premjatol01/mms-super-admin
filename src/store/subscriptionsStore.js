@@ -3,6 +3,7 @@ import { subscriptionsAPI } from "../api/subscriptions";
 import { toast } from "sonner";
 
 export const useSubscriptionsStore = create((set, get) => ({
+  activeTab: "subscriptions", // "subscriptions" | "tickets" | "paymentConfig"
   subscriptions: [],
   loading: false,
   error: null,
@@ -11,6 +12,7 @@ export const useSubscriptionsStore = create((set, get) => ({
     active: 0,
     expiring: 0,
     expired: 0,
+    pendingVerification: 0,
   },
   filters: {
     search: "",
@@ -23,6 +25,20 @@ export const useSubscriptionsStore = create((set, get) => ({
     limit: 10,
     total: 0,
   },
+
+  // Payment Verification Modal State
+  verifyingPayment: null,
+  showVerifyPaymentModal: false,
+
+  // Support Tickets State
+  tickets: [],
+  ticketsLoading: false,
+  ticketFilter: "",
+
+  // Payment Config State
+  paymentConfig: null,
+  configLoading: false,
+
   selectedSubscription: null,
   editingSubscription: null,
   showAssignModal: false,
@@ -32,7 +48,9 @@ export const useSubscriptionsStore = create((set, get) => ({
   showRenewModal: false,
   showChangePackageModal: false,
 
-  // Fetch from API
+  setActiveTab: (tab) => set({ activeTab: tab }),
+
+  // Fetch subscriptions from API
   fetchSubscriptions: async () => {
     const { filters, pagination } = get();
     set({ loading: true, error: null });
@@ -49,7 +67,6 @@ export const useSubscriptionsStore = create((set, get) => ({
 
       const res = await subscriptionsAPI.getSubscriptions(params);
       
-      // axiosClient response interceptor returns response.data
       const rawList = Array.isArray(res?.data)
         ? res.data
         : Array.isArray(res?.data?.data)
@@ -115,7 +132,92 @@ export const useSubscriptionsStore = create((set, get) => ({
     set((state) => ({ pagination: { ...state.pagination, limit, page: 1 } }));
   },
 
-  // Modal controls
+  // Payment Verification Modal Controls
+  openVerifyPaymentModal: (paymentOrSub) => {
+    // paymentOrSub can be a pendingPayment object or subscription containing pendingPayment
+    const payment = paymentOrSub.pendingPayment || paymentOrSub;
+    set({ verifyingPayment: payment, showVerifyPaymentModal: true });
+  },
+
+  closeVerifyPaymentModal: () => {
+    set({ verifyingPayment: null, showVerifyPaymentModal: false });
+  },
+
+  reviewPayment: async (paymentRequestId, status, reviewNote = "") => {
+    try {
+      const res = await subscriptionsAPI.reviewPaymentRequest(paymentRequestId, { status, reviewNote });
+      const msg = res?.message || (status === "confirmed" ? "Payment confirmed and subscription activated!" : "Payment rejected.");
+      toast.success(msg);
+      get().closeVerifyPaymentModal();
+      await get().fetchSubscriptions();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to review payment request";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
+
+  // Support Tickets
+  fetchTickets: async () => {
+    set({ ticketsLoading: true });
+    try {
+      const params = {};
+      if (get().ticketFilter) params.status = get().ticketFilter;
+      const res = await subscriptionsAPI.getTickets(params);
+      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      set({ tickets: list, ticketsLoading: false });
+    } catch (err) {
+      console.error("Failed to fetch tickets:", err);
+      set({ ticketsLoading: false });
+    }
+  },
+
+  setTicketFilter: (filter) => {
+    set({ ticketFilter: filter });
+    get().fetchTickets();
+  },
+
+  updateTicketStatus: async (ticketId, status, adminReply = "") => {
+    try {
+      const res = await subscriptionsAPI.updateTicket(ticketId, { status, adminReply });
+      toast.success(res?.message || "Ticket updated successfully");
+      await get().fetchTickets();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to update ticket";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
+
+  // Payment Config
+  fetchPaymentConfig: async () => {
+    set({ configLoading: true });
+    try {
+      const res = await subscriptionsAPI.getPaymentConfig();
+      const cfg = res?.data || res || null;
+      set({ paymentConfig: cfg, configLoading: false });
+    } catch (err) {
+      console.error("Failed to fetch payment config:", err);
+      set({ configLoading: false });
+    }
+  },
+
+  savePaymentConfig: async (formDataOrData) => {
+    try {
+      const res = await subscriptionsAPI.updatePaymentConfig(formDataOrData);
+      toast.success(res?.message || "Payment settings updated successfully");
+      await get().fetchPaymentConfig();
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to save payment settings";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  },
+
+  // Existing Modal controls
   openAssignModal: () => set({ showAssignModal: true, editingSubscription: null }),
   closeAssignModal: () => set({ showAssignModal: false, editingSubscription: null }),
 
@@ -140,7 +242,6 @@ export const useSubscriptionsStore = create((set, get) => ({
   openChangePackageModal: (sub) => set({ showChangePackageModal: true, selectedSubscription: sub }),
   closeChangePackageModal: () => set({ showChangePackageModal: false }),
 
-  // API Mutating Actions
   assignSubscription: async (subData) => {
     try {
       const res = await subscriptionsAPI.assignSubscription(subData);
@@ -220,13 +321,5 @@ export const useSubscriptionsStore = create((set, get) => ({
       toast.error(msg);
       return { success: false, message: msg };
     }
-  },
-
-  getFilteredSubscriptions: () => {
-    return get().subscriptions;
-  },
-
-  getSummary: () => {
-    return get().summary;
   },
 }));

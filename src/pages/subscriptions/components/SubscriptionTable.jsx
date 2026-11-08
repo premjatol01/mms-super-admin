@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal, Eye, RefreshCw, Package, X, CheckCircle, Clock, XCircle } from "lucide-react";
+import { MoreHorizontal, Eye, RefreshCw, Package, X, CheckCircle, Clock, XCircle, ShieldCheck, Zap } from "lucide-react";
+import { useSubscriptionsStore } from "../../../store/subscriptionsStore";
 
 export default function SubscriptionTable({ 
   subscriptions, 
@@ -9,6 +10,7 @@ export default function SubscriptionTable({
   onRenew,
   onChangePackage,
 }) {
+  const { openVerifyPaymentModal } = useSubscriptionsStore();
   const [dropdownMenu, setDropdownMenu] = useState(null);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function SubscriptionTable({
     }
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const menuHeight = 150;
+    const menuHeight = 170;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUpward = spaceBelow < menuHeight && rect.top > menuHeight;
 
@@ -101,7 +103,7 @@ export default function SubscriptionTable({
                 <th className="px-4 py-3.5 text-left text-sm font-medium text-theme">End Date</th>
                 <th className="px-4 py-3.5 text-left text-sm font-medium text-theme">Status</th>
                 <th className="px-4 py-3.5 text-left text-sm font-medium text-theme">Features</th>
-                <th className="px-4 py-3.5 text-center text-sm font-medium text-theme w-20">Actions</th>
+                <th className="px-4 py-3.5 text-center text-sm font-medium text-theme w-28">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -130,25 +132,53 @@ export default function SubscriptionTable({
               <th className="px-4 py-3.5 text-left text-sm font-medium text-theme">End Date</th>
               <th className="px-4 py-3.5 text-left text-sm font-medium text-theme">Status</th>
               <th className="px-4 py-3.5 text-left text-sm font-medium text-theme">Features</th>
-              <th className="px-4 py-3.5 text-center text-sm font-medium text-theme w-20">Actions</th>
+              <th className="px-4 py-3.5 text-center text-sm font-medium text-theme w-28">Actions</th>
             </tr>
           </thead>
           <tbody>
             {subscriptions.map((sub) => {
               const subId = sub._id || sub.id;
               const daysRemaining = getDaysRemaining(sub.endDate);
-              const isExpiring = sub.status === "expiring" || (sub.status === "active" && daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7);
+              const isExpired = sub.status === "expired" || sub.realtimeStatus === "expired" || (daysRemaining !== null && daysRemaining <= 0);
+              const isExpiring = !isExpired && (sub.status === "expiring" || (daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7));
+              const hasPendingPayment = Boolean(sub.hasPendingPayment || sub.pendingPayment);
+              const effectiveStatus = isExpired ? "expired" : sub.status;
 
               return (
-                <tr key={subId} className="border-b border-theme hover:bg-primary-light/10 transition-colors">
+                <tr
+                  key={subId}
+                  className={`border-b border-theme transition-colors ${
+                    hasPendingPayment
+                      ? "bg-amber-500/10 dark:bg-amber-950/20 border-l-4 border-l-amber-500 hover:bg-amber-500/15"
+                      : isExpired
+                      ? "bg-red-500/5 hover:bg-red-500/10"
+                      : "hover:bg-primary-light/10"
+                  }`}
+                >
                   <td className="px-5 py-3.5">
-                    <div>
-                      <p className="font-semibold text-theme text-sm">{sub.restaurantName}</p>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-theme text-sm">{sub.restaurantName}</p>
+                        {hasPendingPayment && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500 text-white shadow-xs animate-pulse">
+                            <Zap size={10} /> Needs Verification
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-secondary truncate max-w-xs">{sub.adminName || sub.adminEmail || "-"}</p>
+                      {hasPendingPayment && sub.pendingPayment && (
+                        <button
+                          type="button"
+                          onClick={() => openVerifyPaymentModal(sub.pendingPayment)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline w-fit cursor-pointer"
+                        >
+                          Review ₹{Number(sub.pendingPayment.amount || 0).toLocaleString("en-IN")} payment screenshot →
+                        </button>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className="text-sm font-medium text-theme">{sub.packageName}</span>
+                    <span className="text-sm font-semibold text-theme">{sub.packageName}</span>
                   </td>
                   <td className="px-4 py-3.5">
                     <span className="text-sm text-theme">{sub.durationDisplay || (sub.duration ? `${sub.duration} Days` : "-")}</span>
@@ -158,16 +188,26 @@ export default function SubscriptionTable({
                   </td>
                   <td className="px-4 py-3.5">
                     <div>
-                      <span className="text-sm font-medium text-theme">{formatDate(sub.endDate)}</span>
-                      {isExpiring && daysRemaining !== null && daysRemaining > 0 && (
+                      <span className={`text-sm font-semibold ${isExpired ? "text-red-600 dark:text-red-400" : "text-theme"}`}>
+                        {formatDate(sub.endDate)}
+                      </span>
+                      {isExpired ? (
+                        <p className="text-xs font-bold text-red-600 dark:text-red-400">
+                          Plan Ended
+                        </p>
+                      ) : isExpiring && daysRemaining !== null && daysRemaining > 0 ? (
                         <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                           {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <StatusBadge status={sub.status} isExpiring={isExpiring} />
+                    <StatusBadge
+                      status={effectiveStatus}
+                      isExpiring={isExpiring}
+                      hasPendingPayment={hasPendingPayment}
+                    />
                   </td>
                   <td className="px-4 py-3.5">
                     <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-md bg-primary-light/30 text-theme font-medium">
@@ -175,18 +215,30 @@ export default function SubscriptionTable({
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-center">
-                    <button 
-                      data-dropdown-trigger="true"
-                      onClick={(e) => handleToggleDropdown(e, sub)}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                        dropdownMenu?.id === subId 
-                          ? "text-primary bg-primary-light" 
-                          : "text-secondary hover:text-theme hover:bg-primary-light/50"
-                      }`}
-                      title="Actions"
-                    >
-                      {dropdownMenu?.id === subId ? <X size={16} /> : <MoreHorizontal size={16} />}
-                    </button>
+                    <div className="flex items-center justify-center gap-1.5">
+                      {hasPendingPayment && sub.pendingPayment && (
+                        <button
+                          type="button"
+                          onClick={() => openVerifyPaymentModal(sub.pendingPayment)}
+                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-colors cursor-pointer shrink-0"
+                          title="Verify uploaded payment screenshot"
+                        >
+                          Verify
+                        </button>
+                      )}
+                      <button 
+                        data-dropdown-trigger="true"
+                        onClick={(e) => handleToggleDropdown(e, sub)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          dropdownMenu?.id === subId 
+                            ? "text-primary bg-primary-light" 
+                            : "text-secondary hover:text-theme hover:bg-primary-light/50"
+                        }`}
+                        title="Actions"
+                      >
+                        {dropdownMenu?.id === subId ? <X size={16} /> : <MoreHorizontal size={16} />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -195,7 +247,7 @@ export default function SubscriptionTable({
         </table>
       </div>
 
-      {/* Dropdown Portal - rendered into document.body to guarantee visibility without clipping */}
+      {/* Dropdown Portal */}
       {dropdownMenu && createPortal(
         <div 
           id="subscription-actions-dropdown"
@@ -205,9 +257,21 @@ export default function SubscriptionTable({
             right: `${dropdownMenu.right}px`,
             zIndex: 99999,
           }}
-          className="bg-surface border border-theme rounded-xl shadow-2xl w-48 py-1.5 overflow-hidden animate-in fade-in duration-150"
+          className="bg-surface border border-theme rounded-xl shadow-2xl w-52 py-1.5 overflow-hidden animate-in fade-in duration-150"
           onClick={(e) => e.stopPropagation()}
         >
+          {dropdownMenu.sub.hasPendingPayment && dropdownMenu.sub.pendingPayment && (
+            <button 
+              onClick={() => {
+                const p = dropdownMenu.sub.pendingPayment;
+                setDropdownMenu(null);
+                openVerifyPaymentModal(p);
+              }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer text-left border-b border-theme/40"
+            >
+              <ShieldCheck size={14} className="text-amber-500" /> Verify Payment Proof
+            </button>
+          )}
           <button 
             onClick={() => handleActionClick(onView, dropdownMenu.sub)}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-theme hover:bg-primary-light/50 transition-colors cursor-pointer text-left"
@@ -218,7 +282,7 @@ export default function SubscriptionTable({
             onClick={() => handleActionClick(onRenew, dropdownMenu.sub)}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-theme hover:bg-primary-light/50 transition-colors cursor-pointer text-left"
           >
-            <RefreshCw size={14} className="text-primary" /> Renew
+            <RefreshCw size={14} className="text-primary" /> Renew Subscription
           </button>
           <button 
             onClick={() => handleActionClick(onChangePackage, dropdownMenu.sub)}
@@ -233,7 +297,19 @@ export default function SubscriptionTable({
   );
 }
 
-function StatusBadge({ status, isExpiring }) {
+function StatusBadge({ status, isExpiring, hasPendingPayment }) {
+  if (hasPendingPayment) {
+    return (
+      <span 
+        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+        style={{ backgroundColor: "#f59e0b25", color: "#d97706" }}
+      >
+        <Clock size={11} className="mr-1 animate-spin" />
+        Payment Pending
+      </span>
+    );
+  }
+
   if (isExpiring) {
     return (
       <span 
@@ -249,12 +325,12 @@ function StatusBadge({ status, isExpiring }) {
   const config = {
     active: { label: "Active", bg: "#22c55e20", color: "#22c55e", icon: CheckCircle },
     expiring: { label: "Expiring Soon", bg: "#f59e0b20", color: "#f59e0b", icon: Clock },
-    expired: { label: "Expired", bg: "#ef444420", color: "#ef4444", icon: XCircle },
+    expired: { label: "Expired", bg: "#ef444425", color: "#dc2626", icon: XCircle },
     cancelled: { label: "Cancelled", bg: "#6b728020", color: "#6b7280", icon: XCircle },
     scheduled: { label: "Scheduled", bg: "#3b82f620", color: "#3b82f6", icon: Clock },
   };
   
-  const current = config[status] || config.active;
+  const current = config[status] || (status === "expired" ? config.expired : config.active);
   const Icon = current.icon;
   
   return (
