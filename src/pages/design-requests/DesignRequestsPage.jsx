@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { 
@@ -8,18 +8,11 @@ import {
   QrCode, 
   Upload, 
   CheckCircle2, 
-  XCircle, 
-  Clock, 
-  RefreshCw,
-  FileText,
-  X,
-  Eye,
-  Download
+  X
 } from "lucide-react";
 import { useDesignRequestStore } from "../../store/designRequestStore";
 import Select from "../../components/ui/Select";
 import Button from "../../components/ui/Button";
-import Input from "../../components/ui/Input";
 import Textarea from "../../components/ui/Textarea";
 
 const STATUS_OPTIONS = [
@@ -91,23 +84,7 @@ export default function DesignRequestsPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)] space-y-4">
-      {/* Header Info Banner */}
-      <div className="flex items-center justify-between bg-surface border border-theme rounded-xl p-5 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary shrink-0">
-            <Palette size={20} />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-theme">Direct Designer Service Requests</h1>
-            <p className="text-xs text-secondary">Review restaurant design requests, update status, and upload completed high-resolution assets.</p>
-          </div>
-        </div>
-        <Button variant="secondary" size="sm" onClick={() => fetchRequests(true)}>
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
-        </Button>
-      </div>
-
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
       <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
           <table className="w-full text-sm text-left border-collapse">
