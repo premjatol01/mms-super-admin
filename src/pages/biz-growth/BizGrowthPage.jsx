@@ -51,10 +51,12 @@ export default function BizGrowthPage() {
         type: typeFilter !== "all" ? typeFilter : undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
       });
-      if (res.data?.success) {
-        setItems(res.data.data.items || []);
-        if (res.data.data.stats) {
-          setStats(res.data.data.stats);
+      const isSuccess = res?.success ?? res?.data?.success;
+      const dataPayload = res?.data?.items ? res.data : (res?.data?.data || res?.data || res || {});
+      if (isSuccess || dataPayload?.items) {
+        setItems(dataPayload.items || []);
+        if (dataPayload.stats) {
+          setStats(dataPayload.stats);
         }
       }
     } catch (err) {
@@ -113,10 +115,12 @@ export default function BizGrowthPage() {
   const handleToggleStatus = async (id) => {
     try {
       const res = await bizGrowthApi.toggleStatus(id);
-      if (res.data?.success) {
-        toast.success(res.data.message || "Status updated");
+      const isSuccess = res?.success ?? res?.data?.success;
+      const updatedItem = res?.data?.data || res?.data;
+      if (isSuccess && updatedItem) {
+        toast.success(res?.message || res?.data?.message || "Status updated");
         setItems((prev) =>
-          prev.map((item) => ((item._id === id || item.id === id) ? res.data.data : item))
+          prev.map((item) => ((item._id === id || item.id === id) ? updatedItem : item))
         );
       }
     } catch (err) {
@@ -126,24 +130,6 @@ export default function BizGrowthPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-theme">Biz Growth</h1>
-            <span className="text-xs bg-primary-soft text-primary font-semibold px-2.5 py-0.5 rounded-full border border-primary/20">
-              Learning Hub
-            </span>
-          </div>
-          <p className="text-xs text-secondary mt-1">
-            Curate video masterclasses, growth playbooks, industry news, and marketing tips for restaurant owners.
-          </p>
-        </div>
-        <Button onClick={handleOpenCreate} className="shrink-0 flex items-center gap-2 cursor-pointer">
-          <Plus size={16} /> Add Resource
-        </Button>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-surface rounded-xl border border-theme p-4">
@@ -197,37 +183,45 @@ export default function BizGrowthPage() {
 
       {/* Filter Toolbar */}
       <div className="bg-surface rounded-xl border border-theme p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex-1 w-full">
             <SearchInput
               value={search}
               onChange={setSearch}
               placeholder="Search resources by title, topic, or source..."
             />
           </div>
-          <div className="w-full sm:w-44">
-            <Select
-              value={typeFilter}
-              onChange={setTypeFilter}
-              options={[
-                { value: "all", label: "All Types" },
-                { value: "youtube", label: "YouTube Videos" },
-                { value: "blog", label: "Blog Guides" },
-                { value: "news", label: "Industry News" },
-                { value: "social", label: "Social Media" },
-              ]}
-            />
-          </div>
-          <div className="w-full sm:w-36">
-            <Select
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={[
-                { value: "all", label: "All Status" },
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
-              ]}
-            />
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto">
+            <div className="w-full sm:w-44">
+              <Select
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={[
+                  { value: "all", label: "All Types" },
+                  { value: "youtube", label: "YouTube Videos" },
+                  { value: "blog", label: "Blog Guides" },
+                  { value: "news", label: "Industry News" },
+                  { value: "social", label: "Social Media" },
+                ]}
+              />
+            </div>
+            <div className="w-full sm:w-36">
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ]}
+              />
+            </div>
+            <Button
+              onClick={handleOpenCreate}
+              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+            >
+              <Plus size={16} /> Add Resource
+            </Button>
           </div>
         </div>
       </div>

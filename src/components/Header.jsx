@@ -11,6 +11,7 @@ const ROUTE_TITLES = {
   "/features": { title: "Feature Management", desc: "Configure features and limits" },
   "/subscriptions": { title: "Subscriptions", desc: "Track active restaurant subscriptions" },
   "/qr-config": { title: "QR Configuration", desc: "Global QR code settings" },
+  "/biz-growth": { title: "Biz Growth", desc: "Curate learning resources, videos, and articles for restaurant owners" },
   "/platform-control": { title: "Platform Control", desc: "Global platform settings" },
   "/settings": { title: "Settings", desc: "System settings" },
   "/profile": { title: "Profile", desc: "Your super-admin profile" },
