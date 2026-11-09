@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Youtube, FileText, Newspaper, Share2, Upload, Link as LinkIcon, Check, Sparkles } from "lucide-react";
+import { Video, FileText, Newspaper, Share2, Upload, Link as LinkIcon, Check, Sparkles } from "lucide-react";
 import Modal from "../../../components/ui/Modal";
 import Input from "../../../components/ui/Input";
 import Textarea from "../../../components/ui/Textarea";
@@ -7,7 +7,7 @@ import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 
 const RESOURCE_TYPES = [
-  { id: "youtube", label: "YouTube Video", icon: Youtube, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/40 border-red-200" },
+  { id: "youtube", label: "YouTube Video", icon: Video, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/40 border-red-200" },
   { id: "blog", label: "Blog Post", icon: FileText, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200" },
   { id: "news", label: "News Link", icon: Newspaper, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200" },
   { id: "social", label: "Social Media", icon: Share2, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/40 border-purple-200" },

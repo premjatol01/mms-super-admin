@@ -16,6 +16,7 @@ import {
   LogOut,
   Utensils,
   Palette,
+  TrendingUp,
 } from "lucide-react";
 import useAuthStore from "../store/authStore";
 
@@ -24,6 +25,7 @@ const navItems = [
   { label: "Master Menu", icon: Utensils, path: "/master-menu" },
   { label: "Design Requests", icon: Palette, path: "/design-requests" },
   { label: "Restaurants", icon: Store, path: "/restaurants" },
+  { label: "Biz Growth", icon: TrendingUp, path: "/biz-growth" },
   { label: "Leads", icon: ClipboardList, path: "/leads" },
   { label: "Sub. Packages", icon: Package, path: "/packages" },
   { label: "Subscriptions", icon: CreditCard, path: "/subscriptions" },

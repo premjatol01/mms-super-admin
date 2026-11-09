@@ -10,6 +10,7 @@ import PlatformControlPage from "./pages/platform-control/PlatformControlPage";
 import LoginPage from "./pages/auth/LoginPage";
 import MasterMenuPage from "./pages/master-menu/MasterMenuPage";
 import DesignRequestsPage from "./pages/design-requests/DesignRequestsPage";
+import BizGrowthPage from "./pages/biz-growth/BizGrowthPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 
@@ -28,6 +29,7 @@ export default function App() {
             <Route index element={<PlaceholderPage title="Dashboard" />} />
             <Route path="/master-menu" element={<MasterMenuPage />} />
             <Route path="/restaurants" element={<RestaurantsPage />} />
+            <Route path="/biz-growth" element={<BizGrowthPage />} />
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/design-requests" element={<DesignRequestsPage />} />
             <Route path="/packages" element={<PackagesPage />} />

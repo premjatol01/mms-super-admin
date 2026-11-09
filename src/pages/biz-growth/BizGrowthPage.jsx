@@ -3,7 +3,7 @@ import {
   TrendingUp,
   Plus,
   Search,
-  Youtube,
+  Video,
   FileText,
   Newspaper,
   Share2,
@@ -25,7 +25,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import BizGrowthModal from "./modals/BizGrowthModal";
 
 const TYPE_CONFIG = {
-  youtube: { label: "YouTube", icon: Youtube, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200" },
+  youtube: { label: "YouTube", icon: Video, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200" },
   blog: { label: "Blog Guide", icon: FileText, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200" },
   news: { label: "News", icon: Newspaper, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200" },
   social: { label: "Social", icon: Share2, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200" },
@@ -161,7 +161,7 @@ export default function BizGrowthPage() {
         <div className="bg-surface rounded-xl border border-theme p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-red-100 text-red-600">
-              <Youtube size={20} />
+              <Video size={20} />
             </div>
             <div>
               <p className="text-xs text-secondary">YouTube Videos</p>
