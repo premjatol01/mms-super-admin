@@ -12,8 +12,7 @@ const ROUTE_TITLES = {
   "/subscriptions": { title: "Subscriptions", desc: "Track active restaurant subscriptions" },
   "/qr-config": { title: "QR Configuration", desc: "Global QR code settings" },
   "/biz-growth": { title: "Biz Growth", desc: "Curate learning resources, videos, and articles for restaurant owners" },
-  "/platform-control": { title: "Platform Control", desc: "Global platform settings" },
-  "/settings": { title: "Settings", desc: "System settings" },
+  "/settings": { title: "Platform Settings", desc: "Manage global platform configuration, branding & maintenance mode" },
   "/profile": { title: "Super Admin Profile", desc: "Manage super-admin credentials, personal address & security" },
 };
 

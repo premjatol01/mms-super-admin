@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Store,
@@ -30,13 +30,16 @@ const navItems = [
   { label: "Sub. Packages", icon: Package, path: "/packages" },
   { label: "Subscriptions", icon: CreditCard, path: "/subscriptions" },
   { label: "QR Config", icon: QrCode, path: "/qr-config" },
-  { label: "Platform Control", icon: Globe, path: "/platform-control" },
 ];
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const logout = useAuthStore((state) => state.logout);
+
+  const isProfileActive = location.pathname.startsWith("/profile");
+  const isSettingsActive = location.pathname.startsWith("/settings");
 
   return (
     <aside
@@ -110,7 +113,11 @@ export default function Sidebar() {
         <button
           onClick={() => navigate("/profile")}
           title="Profile"
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-theme hover:bg-primary-light transition-colors cursor-pointer"
+          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+            isProfileActive
+              ? "bg-primary text-white shadow-xs"
+              : "text-theme hover:bg-primary-light"
+          }`}
         >
           <User size={18} />
         </button>
@@ -118,7 +125,11 @@ export default function Sidebar() {
         <button
           onClick={() => navigate("/settings")}
           title="Settings"
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-theme hover:bg-primary-light transition-colors cursor-pointer"
+          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+            isSettingsActive
+              ? "bg-primary text-white shadow-xs"
+              : "text-theme hover:bg-primary-light"
+          }`}
         >
           <Settings size={18} />
         </button>

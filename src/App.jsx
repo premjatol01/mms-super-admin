@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
@@ -6,7 +6,7 @@ import PackagesPage from "./pages/packages/PackagesPage";
 import SubscriptionsPage from "./pages/subscriptions/SubscriptionsPage";
 import LeadsPage from "./pages/leads/LeadsPage";
 import QRConfigPage from "./pages/qr-config/QRConfigPage";
-import PlatformControlPage from "./pages/platform-control/PlatformControlPage";
+import SettingsPage from "./pages/settings/SettingsPage";
 import LoginPage from "./pages/auth/LoginPage";
 import MasterMenuPage from "./pages/master-menu/MasterMenuPage";
 import DesignRequestsPage from "./pages/design-requests/DesignRequestsPage";
@@ -37,8 +37,8 @@ export default function App() {
             <Route path="/packages/new" element={<PlaceholderPage title="Create New Package" />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/qr-config" element={<QRConfigPage />} />
-            <Route path="/platform-control" element={<PlatformControlPage title="Restaurant Website — Platform Control" />} />
-            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/platform-control" element={<Navigate to="/settings" replace />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
