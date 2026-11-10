@@ -7,10 +7,10 @@ import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 
 const RESOURCE_TYPES = [
-  { id: "youtube", label: "YouTube Video", icon: Video, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/40 border-red-200" },
-  { id: "blog", label: "Blog Post", icon: FileText, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200" },
-  { id: "news", label: "News Link", icon: Newspaper, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200" },
-  { id: "social", label: "Social Media", icon: Share2, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/40 border-purple-200" },
+  { id: "youtube", label: "YouTube Video", icon: Video, color: "text-red-600", bg: "bg-red-50/80 border-red-200/60 text-red-700" },
+  { id: "blog", label: "Blog Post", icon: FileText, color: "text-blue-600", bg: "bg-blue-50/80 border-blue-200/60 text-blue-700" },
+  { id: "news", label: "News Link", icon: Newspaper, color: "text-emerald-600", bg: "bg-emerald-50/80 border-emerald-200/60 text-emerald-700" },
+  { id: "social", label: "Social Media", icon: Share2, color: "text-purple-600", bg: "bg-purple-50/80 border-purple-200/60 text-purple-700" },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -197,8 +197,8 @@ export default function BizGrowthModal({ isOpen, onClose, initialData, onSave, s
                   onClick={() => handleTypeChange(t.id)}
                   className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                     active
-                      ? "border-primary bg-primary text-white shadow-sm"
-                      : "border-theme bg-surface hover:bg-surface-soft text-theme"
+                      ? "border-primary bg-primary text-white shadow-xs"
+                      : "border-theme-faded bg-surface hover:bg-primary-light/10 text-theme"
                   }`}
                 >
                   <Icon size={16} className={active ? "text-white" : t.color} />
@@ -292,7 +292,7 @@ export default function BizGrowthModal({ isOpen, onClose, initialData, onSave, s
                 placeholder="Paste image URL (or upload below)"
               />
               <div className="flex items-center gap-2">
-                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-theme text-xs font-semibold text-secondary hover:text-theme bg-surface hover:bg-surface-soft cursor-pointer transition-colors">
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-theme-faded text-xs font-semibold text-secondary hover:text-theme bg-surface hover:bg-primary-light/10 cursor-pointer transition-colors">
                   <Upload size={14} />
                   <span>Upload Image File</span>
                   <input
@@ -311,7 +311,7 @@ export default function BizGrowthModal({ isOpen, onClose, initialData, onSave, s
             </div>
 
             {thumbnailPreview ? (
-              <div className="w-28 h-20 rounded-xl overflow-hidden border border-theme bg-surface-soft shrink-0 relative">
+              <div className="w-28 h-20 rounded-xl overflow-hidden border border-theme-faded bg-slate-50 shrink-0 relative">
                 <img
                   src={thumbnailPreview}
                   alt="Thumbnail Preview"
@@ -319,7 +319,7 @@ export default function BizGrowthModal({ isOpen, onClose, initialData, onSave, s
                 />
               </div>
             ) : (
-              <div className="w-28 h-20 rounded-xl border border-dashed border-theme flex items-center justify-center text-secondary/40 text-xs shrink-0">
+              <div className="w-28 h-20 rounded-xl border border-dashed border-theme-faded flex items-center justify-center text-secondary/40 text-xs shrink-0">
                 No preview
               </div>
             )}
@@ -336,7 +336,7 @@ export default function BizGrowthModal({ isOpen, onClose, initialData, onSave, s
         />
 
         {/* Featured & Status Checkboxes */}
-        <div className="pt-2 border-t border-theme flex flex-wrap items-center justify-between gap-4">
+        <div className="pt-2 border-t border-theme-faded flex flex-wrap items-center justify-between gap-4">
           <label className="flex items-center gap-2 text-sm text-theme cursor-pointer select-none">
             <input
               type="checkbox"
@@ -355,7 +355,7 @@ export default function BizGrowthModal({ isOpen, onClose, initialData, onSave, s
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="bg-surface border border-theme rounded-lg px-2.5 py-1 text-xs text-theme focus:outline-none"
+              className="bg-surface border border-theme-faded rounded-lg px-2.5 py-1 text-xs text-theme focus:outline-none"
             >
               <option value="active">Active (Visible)</option>
               <option value="inactive">Inactive (Hidden)</option>
@@ -364,8 +364,8 @@ export default function BizGrowthModal({ isOpen, onClose, initialData, onSave, s
         </div>
 
         {/* Modal Footer */}
-        <div className="pt-4 border-t border-theme flex items-center justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+        <div className="pt-4 border-t border-theme-faded flex items-center justify-end gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={saving} className="border-theme-faded">
             Cancel
           </Button>
           <Button type="submit" disabled={saving || !title.trim()}>

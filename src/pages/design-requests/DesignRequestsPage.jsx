@@ -85,10 +85,10 @@ export default function DesignRequestsPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)]">
-      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
+      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme-faded rounded-xl overflow-hidden shadow-xs">
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
           <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-primary-light/20 text-theme border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
+            <thead className="bg-primary-light/15 text-theme border-b border-theme-faded sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
               <tr>
                 <th className="px-5 py-3.5 font-medium">Restaurant</th>
                 <th className="px-4 py-3.5 font-medium">Type</th>
@@ -99,7 +99,7 @@ export default function DesignRequestsPage() {
                 <th className="px-4 py-3.5 font-medium">Status & Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-theme">
+            <tbody className="divide-y divide-theme-faded">
               {loading && requests.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-16 text-center text-secondary">
@@ -128,10 +128,10 @@ export default function DesignRequestsPage() {
                       </td>
 
                       <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap border ${
                           isMenu 
-                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" 
-                            : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                            ? "bg-blue-50/80 text-blue-700 border-blue-200/50" 
+                            : "bg-purple-50/80 text-purple-700 border-purple-200/50"
                         }`}>
                           {isMenu ? <UtensilsCrossed size={13} /> : <QrCode size={13} />}
                           {req.requestType || "Menu Design"}
@@ -167,7 +167,7 @@ export default function DesignRequestsPage() {
                               href={getFileUrl(compUrl)}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-green-600 hover:underline text-xs font-semibold"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 hover:bg-emerald-100/80 transition-colors"
                             >
                               <CheckCircle2 size={13} /> Final Asset
                             </a>
@@ -211,7 +211,7 @@ export default function DesignRequestsPage() {
                                 setCompletedFile(null);
                               }}
                               title="Upload finished design file"
-                              className="text-xs shrink-0"
+                              className="text-xs shrink-0 border-theme-faded"
                             >
                               <Upload size={13} /> Fulfill
                             </Button>
@@ -229,9 +229,9 @@ export default function DesignRequestsPage() {
 
       {/* Fulfillment Modal (Upload Completed Design Asset & Remarks) */}
       {fulfillModalReq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="relative bg-surface border border-theme rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-theme pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="relative bg-surface border border-theme-faded rounded-2xl w-full max-w-lg p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-theme-faded pb-3">
               <div>
                 <h3 className="text-base font-bold text-theme">Fulfill & Complete Design Request</h3>
                 <p className="text-xs text-secondary">{fulfillModalReq.restaurantId?.name || fulfillModalReq.restaurant?.name} - {fulfillModalReq.requestType || "Menu Design"}</p>
@@ -247,7 +247,7 @@ export default function DesignRequestsPage() {
 
             <div>
               <p className="text-xs text-secondary mb-1">Request Summary:</p>
-              <p className="text-xs text-theme bg-primary-light/20 p-2.5 rounded-lg italic line-clamp-3">
+              <p className="text-xs text-theme bg-primary-light/15 border border-theme-faded p-2.5 rounded-lg italic line-clamp-3">
                 "{fulfillModalReq.description}"
               </p>
             </div>
@@ -270,7 +270,7 @@ export default function DesignRequestsPage() {
                 type="file"
                 accept="image/*,application/pdf"
                 onChange={(e) => setCompletedFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-theme border border-theme rounded-lg p-2.5 bg-surface cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary hover:file:text-white"
+                className="w-full text-xs text-theme border border-theme-faded rounded-lg p-2.5 bg-surface cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-primary hover:file:text-white"
               />
               {completedFile && (
                 <p className="text-xs text-green-600 font-medium mt-1">
@@ -279,11 +279,12 @@ export default function DesignRequestsPage() {
               )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-theme">
+            <div className="flex justify-end gap-3 pt-3 border-t border-theme-faded">
               <Button
                 variant="secondary"
                 onClick={() => setFulfillModalReq(null)}
                 disabled={isSubmittingFulfill}
+                className="border-theme-faded"
               >
                 Cancel
               </Button>
