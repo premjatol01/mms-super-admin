@@ -96,7 +96,17 @@ export const useRestaurantsStore = create((set, get) => ({
   // Modals
   openAddModal: () => set({ showAddModal: true, editingRestaurant: null }),
   closeAddModal: () => set({ showAddModal: false, editingRestaurant: null }),
-  openEditModal: (restaurant) => set({ showAddModal: true, editingRestaurant: restaurant }),
+  openEditModal: async (restaurant) => {
+    set({ showAddModal: true, editingRestaurant: restaurant });
+    try {
+      const res = await restaurantAPI.getRestaurant(restaurant._id || restaurant.id);
+      if (res?.data) {
+        set({ editingRestaurant: res.data });
+      }
+    } catch (err) {
+      console.warn("Could not fetch fresh restaurant details for edit modal:", err);
+    }
+  },
   closeEditModal: () => set({ showAddModal: false, editingRestaurant: null }),
   
   openDetails: (restaurant, tab = "overview") => set({ 

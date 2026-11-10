@@ -197,7 +197,9 @@ export default function RestaurantTable({
                     </p>
                   </td>
                   <td className="px-4 py-3 w-28 min-w-[110px]">
-                    <p className="text-sm text-theme truncate">{restaurant.address?.city || '-'}</p>
+                    <p className="text-sm text-theme truncate" title={restaurant.address?.fullAddress || restaurant.detailedAddress?.city || restaurant.address?.city}>
+                      {restaurant.detailedAddress?.city || restaurant.address?.city || '-'}
+                    </p>
                   </td>
                   <td className="px-4 py-3 w-28 min-w-[110px]">
                     <p className="text-sm text-theme truncate">{restaurant.subscription?.packageName || restaurant.subscription?.package || '-'}</p>

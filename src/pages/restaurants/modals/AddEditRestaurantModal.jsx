@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import SelectReact from "react-select";
 import { useRestaurantsStore, subscriptionPackages } from "../../../store/restaurantsStore";
 import { packagesAPI } from "../../../api/packages";
 import Button from "../../../components/ui/Button";
@@ -10,6 +11,7 @@ import Textarea from "../../../components/ui/Textarea";
 import Select from "../../../components/ui/Select";
 import ImageUploader from "../../../components/ui/ImageUploader";
 import { Calendar, Users } from "lucide-react";
+import { INDIAN_STATES, COUNTRY_OPTIONS, selectCustomStyles } from "../../../constants/addressConstants";
 
 // Helper to strictly extract 10 digits without any country code (strips +91 or leading 91)
 const clean10Digits = (val) => {
@@ -36,11 +38,15 @@ const getInitialFormData = (restaurant = null) => ({
   name: restaurant?.name || "",
   logo: restaurant?.logo || null,
   description: restaurant?.description || "",
+  houseNumber: restaurant?.detailedAddress?.line1 !== undefined ? restaurant.detailedAddress.line1 : (restaurant?.detailedAddress?.houseNumber || ""),
+  street: restaurant?.detailedAddress?.line2 !== undefined ? restaurant.detailedAddress.line2 : (restaurant?.detailedAddress?.street !== undefined ? restaurant.detailedAddress.street : ""),
+  area: restaurant?.detailedAddress?.area || "",
+  landmark: restaurant?.detailedAddress?.landmark || "",
+  city: restaurant?.detailedAddress?.city || restaurant?.address?.city || "",
+  state: restaurant?.detailedAddress?.state || restaurant?.address?.state || "Rajasthan",
+  country: restaurant?.detailedAddress?.country || restaurant?.address?.country || "India",
+  pincode: restaurant?.detailedAddress?.pincode || restaurant?.address?.pincode || "",
   address: restaurant?.address?.fullAddress || "",
-  city: restaurant?.address?.city || "",
-  state: restaurant?.address?.state || "",
-  country: restaurant?.address?.country || "India",
-  pincode: restaurant?.address?.pincode || "",
   // Contact Information (Clean 10 digits without 91 code)
   phone: clean10Digits(restaurant?.phone || restaurant?.contact?.primaryPhone),
   email: restaurant?.email || restaurant?.contact?.email || "",
@@ -49,6 +55,14 @@ const getInitialFormData = (restaurant = null) => ({
   adminName: restaurant?.admin?.name || "",
   adminEmail: restaurant?.admin?.email || "",
   adminPhone: clean10Digits(restaurant?.admin?.phone),
+  adminHouseNumber: restaurant?.admin?.personalAddress?.line1 || "",
+  adminStreet: restaurant?.admin?.personalAddress?.line2 || "",
+  adminArea: restaurant?.admin?.personalAddress?.area || "",
+  adminLandmark: restaurant?.admin?.personalAddress?.landmark || "",
+  adminCity: restaurant?.admin?.personalAddress?.city || "",
+  adminState: restaurant?.admin?.personalAddress?.state || "Rajasthan",
+  adminCountry: restaurant?.admin?.personalAddress?.country || "India",
+  adminPincode: restaurant?.admin?.personalAddress?.pincode || "",
   // Subscription Package
   package: restaurant?.subscription?.packageName || restaurant?.subscription?.package || "Basic",
   duration: normalizeDuration(restaurant?.subscription?.duration),
@@ -131,6 +145,22 @@ export default function AddEditRestaurantModal() {
       toast.error("City is required");
       return;
     }
+    if (!formData.state?.trim()) {
+      toast.error("State is required");
+      return;
+    }
+    if (!formData.pincode?.trim()) {
+      toast.error("PIN code is required");
+      return;
+    }
+    if (formData.country === "India" && !/^\d{6}$/.test(formData.pincode.trim())) {
+      toast.error("PIN code must be a valid 6-digit number");
+      return;
+    }
+    if (!formData.country?.trim()) {
+      toast.error("Country is required");
+      return;
+    }
 
     // Contact Information validation
     const cleanRestPhone = clean10Digits(formData.phone);
@@ -173,19 +203,60 @@ export default function AddEditRestaurantModal() {
 
       submitData.append('status', formData.status);
       
+      const houseNumber = (formData.houseNumber || '').trim();
+      const street = (formData.street || '').trim();
+      const area = (formData.area || '').trim();
+      const landmark = (formData.landmark || '').trim();
+      const city = (formData.city || '').trim();
+      const state = (formData.state || '').trim();
+      const pincode = (formData.pincode || '').trim();
+      const country = (formData.country || 'India').trim();
+
+      const fullAddress = [
+        houseNumber,
+        street,
+        area,
+        landmark ? `Near ${landmark}` : '',
+        city,
+        state,
+        pincode,
+        country
+      ].filter(Boolean).join(', ');
+
+      submitData.append('detailedAddress', JSON.stringify({
+        line1: houseNumber,
+        line2: street,
+        area,
+        landmark,
+        city,
+        state,
+        pincode,
+        country
+      }));
+
       submitData.append('address', JSON.stringify({
-        city: formData.city.trim(), 
-        state: formData.state.trim(), 
-        country: formData.country.trim() || 'India', 
-        pincode: formData.pincode.trim(), 
-        fullAddress: formData.address.trim() 
+        city, 
+        state, 
+        country, 
+        pincode, 
+        fullAddress: fullAddress || formData.address?.trim() || ''
       }));
       
       // Admin Information (Strictly 10 digits, NO country code added in DB)
       submitData.append('admin', JSON.stringify({
         name: formData.adminName.trim(), 
         email: formData.adminEmail.trim().toLowerCase(), 
-        phone: cleanAdminPhone 
+        phone: cleanAdminPhone,
+        personalAddress: {
+          line1: (formData.adminHouseNumber || '').trim(),
+          line2: (formData.adminStreet || '').trim(),
+          area: (formData.adminArea || '').trim(),
+          landmark: (formData.adminLandmark || '').trim(),
+          city: (formData.adminCity || '').trim(),
+          state: (formData.adminState || 'Rajasthan').trim(),
+          country: (formData.adminCountry || 'India').trim(),
+          pincode: (formData.adminPincode || '').trim()
+        }
       }));
       
       submitData.append('subscription', JSON.stringify({
@@ -232,6 +303,22 @@ export default function AddEditRestaurantModal() {
     };
   });
 
+  const currentStateOption = INDIAN_STATES.find(
+    (s) => s.value.toLowerCase() === (formData.state || "").toLowerCase()
+  ) || (formData.state ? { value: formData.state, label: formData.state } : null);
+
+  const currentCountryOption = COUNTRY_OPTIONS.find(
+    (c) => c.value.toLowerCase() === (formData.country || "India").toLowerCase()
+  ) || { value: formData.country || "India", label: formData.country || "India" };
+
+  const currentAdminStateOption = INDIAN_STATES.find(
+    (s) => s.value.toLowerCase() === (formData.adminState || "").toLowerCase()
+  ) || (formData.adminState ? { value: formData.adminState, label: formData.adminState } : null);
+
+  const currentAdminCountryOption = COUNTRY_OPTIONS.find(
+    (c) => c.value.toLowerCase() === (formData.adminCountry || "India").toLowerCase()
+  ) || { value: formData.adminCountry || "India", label: formData.adminCountry || "India" };
+
   return (
     <Modal isOpen={showAddModal} onClose={closeAddModal} title={isEdit ? "Edit Restaurant" : "Add Restaurant"} size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -269,40 +356,88 @@ export default function AddEditRestaurantModal() {
           </div>
         </FormSection>
 
-        <FormSection title="Address Details">
-          <div className="space-y-4">
-            <Input 
-              label="Full Address" 
-              value={formData.address} 
-              onChange={(e) => handleChange("address", e.target.value)} 
-              placeholder="Street address, locality, landmark" 
-            />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Input 
-                label="City" 
-                required 
-                value={formData.city} 
-                onChange={(e) => handleChange("city", e.target.value)} 
-                placeholder="City" 
+        <FormSection title="Restaurant Address Details" description="Structured address fields matching website map and restaurant profile">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Input
+                label="House / Building / Flat No."
+                value={formData.houseNumber}
+                onChange={(e) => handleChange("houseNumber", e.target.value)}
+                placeholder="e.g. Shop 4 / Flat 12 / Plot 45"
               />
-              <Input 
-                label="State" 
-                value={formData.state} 
-                onChange={(e) => handleChange("state", e.target.value)} 
-                placeholder="State" 
+            </div>
+
+            <div>
+              <Input
+                label="Street Address / Road"
+                value={formData.street}
+                onChange={(e) => handleChange("street", e.target.value)}
+                placeholder="e.g. Station Road, MG Marg"
               />
-              <Input 
-                label="Country" 
-                value={formData.country} 
-                onChange={(e) => handleChange("country", e.target.value)} 
-                placeholder="Country" 
+            </div>
+
+            <div>
+              <Input
+                label="Area / Locality"
+                value={formData.area}
+                onChange={(e) => handleChange("area", e.target.value)}
+                placeholder="e.g. Shastri Nagar, Tilak Nagar"
               />
-              <Input 
-                label="Pincode" 
+            </div>
+
+            <div>
+              <Input
+                label="Landmark"
+                value={formData.landmark}
+                onChange={(e) => handleChange("landmark", e.target.value)}
+                placeholder="e.g. Opposite City Hospital"
+              />
+            </div>
+
+            <div>
+              <Input
+                label="City"
+                required
+                value={formData.city}
+                onChange={(e) => handleChange("city", e.target.value)}
+                placeholder="e.g. Barmer, Jaipur"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-theme mb-1.5">
+                State <span className="text-red-500">*</span>
+              </label>
+              <SelectReact
+                options={INDIAN_STATES}
+                value={currentStateOption}
+                onChange={(opt) => handleChange("state", opt?.value || "")}
+                placeholder="Select State"
+                styles={selectCustomStyles}
+                isClearable
+              />
+            </div>
+
+            <div>
+              <Input
+                label="PIN Code"
+                required
                 maxLength={6}
-                value={formData.pincode} 
-                onChange={(e) => handleChange("pincode", e.target.value.replace(/\D/g, ''))} 
-                placeholder="6-digit PIN" 
+                value={formData.pincode}
+                onChange={(e) => handleChange("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="e.g. 344001 (6 digits)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-theme mb-1.5">
+                Country <span className="text-red-500">*</span>
+              </label>
+              <SelectReact
+                options={COUNTRY_OPTIONS}
+                value={currentCountryOption}
+                onChange={(opt) => handleChange("country", opt?.value || "India")}
+                styles={selectCustomStyles}
               />
             </div>
           </div>
@@ -377,6 +512,92 @@ export default function AddEditRestaurantModal() {
                   onChange={(e) => handleChange("adminPhone", e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="w-full px-3 py-2 rounded-r-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
                   placeholder="9876543210"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-theme">
+            <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Admin Personal Address</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Input
+                  label="House / Building / Flat No."
+                  value={formData.adminHouseNumber}
+                  onChange={(e) => handleChange("adminHouseNumber", e.target.value)}
+                  placeholder="e.g. Flat 101 / House 22"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Street Address / Road"
+                  value={formData.adminStreet}
+                  onChange={(e) => handleChange("adminStreet", e.target.value)}
+                  placeholder="e.g. Civil Lines, Main Road"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Area / Locality"
+                  value={formData.adminArea}
+                  onChange={(e) => handleChange("adminArea", e.target.value)}
+                  placeholder="e.g. Tilak Nagar"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Landmark"
+                  value={formData.adminLandmark}
+                  onChange={(e) => handleChange("adminLandmark", e.target.value)}
+                  placeholder="e.g. Near Water Tank"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="City"
+                  value={formData.adminCity}
+                  onChange={(e) => handleChange("adminCity", e.target.value)}
+                  placeholder="e.g. Barmer, Jaipur"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-theme mb-1.5">
+                  State
+                </label>
+                <SelectReact
+                  options={INDIAN_STATES}
+                  value={currentAdminStateOption}
+                  onChange={(opt) => handleChange("adminState", opt?.value || "")}
+                  placeholder="Select State"
+                  styles={selectCustomStyles}
+                  isClearable
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="PIN Code"
+                  maxLength={6}
+                  value={formData.adminPincode}
+                  onChange={(e) => handleChange("adminPincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="e.g. 344001 (6 digits)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-theme mb-1.5">
+                  Country
+                </label>
+                <SelectReact
+                  options={COUNTRY_OPTIONS}
+                  value={currentAdminCountryOption}
+                  onChange={(opt) => handleChange("adminCountry", opt?.value || "India")}
+                  styles={selectCustomStyles}
                 />
               </div>
             </div>

@@ -89,13 +89,28 @@ export default function RestaurantDetailsDrawer() {
             <MapPin size={16} className="text-secondary mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs text-secondary">Address</p>
-              <p className="text-sm text-theme">
-                {selectedRestaurant.address?.fullAddress ? `${selectedRestaurant.address.fullAddress}, ` : ""}{selectedRestaurant.address?.city || "N/A"}
+              <p className="text-sm font-medium text-theme">
+                {selectedRestaurant.address?.fullAddress || [
+                  selectedRestaurant.detailedAddress?.line1,
+                  selectedRestaurant.detailedAddress?.line2,
+                  selectedRestaurant.detailedAddress?.area,
+                  selectedRestaurant.detailedAddress?.landmark ? `Near ${selectedRestaurant.detailedAddress.landmark}` : null,
+                  selectedRestaurant.detailedAddress?.city || selectedRestaurant.address?.city,
+                  selectedRestaurant.detailedAddress?.state || selectedRestaurant.address?.state,
+                  selectedRestaurant.detailedAddress?.pincode || selectedRestaurant.address?.pincode,
+                  selectedRestaurant.detailedAddress?.country || selectedRestaurant.address?.country || "India"
+                ].filter(Boolean).join(", ") || "N/A"}
               </p>
-              <p className="text-xs text-secondary">
-                {[selectedRestaurant.address?.city, selectedRestaurant.address?.state, selectedRestaurant.address?.country].filter(Boolean).join(", ")}
-                {selectedRestaurant.address?.pincode ? ` - ${selectedRestaurant.address.pincode}` : ""}
-              </p>
+              {(selectedRestaurant.detailedAddress?.city || selectedRestaurant.address?.city) && (
+                <p className="text-xs text-secondary mt-0.5">
+                  {[
+                    selectedRestaurant.detailedAddress?.city || selectedRestaurant.address?.city,
+                    selectedRestaurant.detailedAddress?.state || selectedRestaurant.address?.state,
+                    selectedRestaurant.detailedAddress?.country || selectedRestaurant.address?.country || "India"
+                  ].filter(Boolean).join(", ")}
+                  {(selectedRestaurant.detailedAddress?.pincode || selectedRestaurant.address?.pincode) ? ` - ${selectedRestaurant.detailedAddress?.pincode || selectedRestaurant.address?.pincode}` : ""}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -151,6 +166,23 @@ export default function RestaurantDetailsDrawer() {
                   : "N/A"}
               </p>
             </div>
+            {selectedRestaurant.admin?.personalAddress && (
+              <div className="sm:col-span-2 pt-2 border-t border-theme">
+                <p className="text-xs text-secondary">Admin Personal Address</p>
+                <p className="text-sm font-medium text-theme">
+                  {[
+                    selectedRestaurant.admin.personalAddress.line1,
+                    selectedRestaurant.admin.personalAddress.line2,
+                    selectedRestaurant.admin.personalAddress.area,
+                    selectedRestaurant.admin.personalAddress.landmark ? `Near ${selectedRestaurant.admin.personalAddress.landmark}` : null,
+                    selectedRestaurant.admin.personalAddress.city,
+                    selectedRestaurant.admin.personalAddress.state,
+                    selectedRestaurant.admin.personalAddress.pincode,
+                    selectedRestaurant.admin.personalAddress.country || "India"
+                  ].filter(Boolean).join(", ") || "N/A"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </FormSection>

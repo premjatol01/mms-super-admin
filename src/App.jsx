@@ -11,6 +11,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import MasterMenuPage from "./pages/master-menu/MasterMenuPage";
 import DesignRequestsPage from "./pages/design-requests/DesignRequestsPage";
 import BizGrowthPage from "./pages/biz-growth/BizGrowthPage";
+import ProfilePage from "./pages/profile/ProfilePage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 
@@ -38,7 +39,7 @@ export default function App() {
             <Route path="/qr-config" element={<QRConfigPage />} />
             <Route path="/platform-control" element={<PlatformControlPage title="Restaurant Website — Platform Control" />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
-            <Route path="/profile" element={<PlaceholderPage title="Profile" />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
       </Routes>

@@ -14,7 +14,7 @@ const ROUTE_TITLES = {
   "/biz-growth": { title: "Biz Growth", desc: "Curate learning resources, videos, and articles for restaurant owners" },
   "/platform-control": { title: "Platform Control", desc: "Global platform settings" },
   "/settings": { title: "Settings", desc: "System settings" },
-  "/profile": { title: "Profile", desc: "Your super-admin profile" },
+  "/profile": { title: "Super Admin Profile", desc: "Manage super-admin credentials, personal address & security" },
 };
 
 export default function Header() {
