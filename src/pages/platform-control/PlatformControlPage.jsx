@@ -18,15 +18,9 @@ import { fetchPlatformSettings, savePlatformSettings, platformSettingsSchema } f
 export default function PlatformControlPage() {
   const [loadStatus, setLoadStatus] = useState('loading'); // loading | error | ready
   const [savedSettings, setSavedSettings] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [confirmation, setConfirmation] = useState(null);
-
-  // Drives UnsavedChangesModal. Wire this to true from a router navigation
-  // guard (e.g. react-router's useBlocker) when the form is dirty and the
-  // admin tries to leave the page; the in-tab beforeunload handler below
-  // already covers closing/reloading the tab.
   const [pendingLeave, setPendingLeave] = useState(false);
 
   const {
@@ -38,7 +32,14 @@ export default function PlatformControlPage() {
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(platformSettingsSchema),
-    defaultValues: {},
+    defaultValues: {
+      platformName: 'Tablly',
+      platformStatus: 'Active',
+      maintenanceEnabled: false,
+      maintenanceMessage: '',
+      logoUrl: '',
+      faviconUrl: '',
+    },
   });
 
   const values = watch();
@@ -58,28 +59,17 @@ export default function PlatformControlPage() {
     loadData();
   }, [loadData]);
 
-  // Warn on tab close/reload while mid-edit with unsaved changes.
+  // Warn on tab close/reload with unsaved changes
   useEffect(() => {
     const handler = (e) => {
-      if (isEditing && isDirty) {
+      if (isDirty) {
         e.preventDefault();
         e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [isEditing, isDirty]);
-
-  const handleEdit = () => {
-    setSaveError('');
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    reset(savedSettings);
-    setSaveError('');
-    setIsEditing(false);
-  };
+  }, [isDirty]);
 
   const commitSave = (formValues) => {
     setIsSaving(true);
@@ -87,24 +77,30 @@ export default function PlatformControlPage() {
 
     savePlatformSettings(formValues)
       .then((saved) => {
-        const logoChanged = saved.logoUrl !== savedSettings.logoUrl || saved.faviconUrl !== savedSettings.faviconUrl;
-        const statusChanged = saved.platformStatus !== savedSettings.platformStatus;
+        const logoChanged = saved.logoUrl !== savedSettings?.logoUrl || saved.faviconUrl !== savedSettings?.faviconUrl;
+        const statusChanged = saved.platformStatus !== savedSettings?.platformStatus;
+        const maintenanceChanged = saved.maintenanceEnabled !== savedSettings?.maintenanceEnabled;
 
         setSavedSettings(saved);
         reset(saved);
-        setIsEditing(false);
         setConfirmation(null);
 
-        if (logoChanged) {
+        if (maintenanceChanged) {
+          if (saved.maintenanceEnabled) {
+            toast.warning('Platform is now in MAINTENANCE MODE. Visitors will see the maintenance message.');
+          } else {
+            toast.success('Platform maintenance mode disabled. Services restored to normal.');
+          }
+        } else if (logoChanged) {
           toast.success('Platform logo updated successfully.');
         } else if (statusChanged) {
-          toast.success('Platform status updated successfully.');
+          toast.success(`Platform status updated to "${saved.platformStatus}".`);
         } else {
-          toast.success('Platform configuration updated successfully.');
+          toast.success('Platform settings saved successfully to database.');
         }
       })
-      .catch(() => {
-        setSaveError('Failed to update platform configuration. Please try again.');
+      .catch((err) => {
+        setSaveError(err.response?.data?.message || err.message || 'Failed to update platform settings. Please try again.');
         setConfirmation(null);
       })
       .finally(() => setIsSaving(false));
@@ -113,26 +109,19 @@ export default function PlatformControlPage() {
   const onSubmit = (formValues) => {
     const changes = [];
 
-    if (formValues.platformStatus !== savedSettings.platformStatus) {
+    if (formValues.platformStatus !== savedSettings?.platformStatus) {
       changes.push(`Platform status will change to "${formValues.platformStatus}".`);
     }
-    if (formValues.maintenanceEnabled && !savedSettings.maintenanceEnabled) {
-      changes.push('Maintenance mode will be turned on, making the platform unavailable to visitors.');
-    }
-    if (!formValues.platformWebsiteEnabled && savedSettings.platformWebsiteEnabled) {
-      changes.push('The platform website will be turned off.');
-    }
-    if (!formValues.restaurantWebsiteAvailability && savedSettings.restaurantWebsiteAvailability) {
-      changes.push('Restaurant websites will become unavailable platform-wide.');
+    if (formValues.maintenanceEnabled && !savedSettings?.maintenanceEnabled) {
+      changes.push('Maintenance mode will be activated. Visitors, public restaurant websites, and customer order portals will display the maintenance notice.');
     }
 
-    if (changes.length > 0) {
-      const isRisky = changes.some((c) => !c.includes('Active'));
+    if (changes.length > 0 && formValues.maintenanceEnabled && !savedSettings?.maintenanceEnabled) {
       setConfirmation({
-        title: 'Confirm platform changes?',
+        title: 'Activate Maintenance Mode?',
         message: changes.join(' '),
-        confirmLabel: 'Save changes',
-        tone: isRisky ? 'disable' : 'enable',
+        confirmLabel: 'Turn On Maintenance',
+        tone: 'disable',
         onConfirm: () => commitSave(formValues),
       });
       return;
@@ -143,7 +132,7 @@ export default function PlatformControlPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      <PlatformControlHeader editing={isEditing} onEdit={handleEdit} />
+      <PlatformControlHeader platformStatus={values.platformStatus || savedSettings?.platformStatus || 'Active'} />
 
       {loadStatus === 'loading' && <LoadingState />}
 
@@ -151,16 +140,21 @@ export default function PlatformControlPage() {
 
       {loadStatus === 'ready' && savedSettings && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <GeneralSettingsCard register={register} errors={errors} editing={isEditing} values={values} setValue={setValue} />
-          <MaintenanceModeCard values={values} setValue={setValue} register={register} editing={isEditing} />
+          <GeneralSettingsCard register={register} errors={errors} editing={true} values={values} setValue={setValue} />
+          <MaintenanceModeCard values={values} setValue={setValue} register={register} editing={true} />
 
           {saveError && (
-            <div className="rounded-lg border border-rose-200 bg-primary-light/30 px-4 py-3 text-sm text-rose-800">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 dark:bg-rose-950/30 px-4 py-3 text-sm text-rose-800 dark:text-rose-300">
               {saveError}
             </div>
           )}
 
-          {isEditing && <SaveChangesBar onCancel={handleCancel} onSave={handleSubmit(onSubmit)} isSaving={isSaving} />}
+          <SaveChangesBar
+            onCancel={() => reset(savedSettings)}
+            onSave={handleSubmit(onSubmit)}
+            isSaving={isSaving}
+            isDirty={isDirty}
+          />
         </form>
       )}
 
@@ -174,7 +168,7 @@ export default function PlatformControlPage() {
         open={pendingLeave}
         onStay={() => setPendingLeave(false)}
         onLeave={() => {
-          handleCancel();
+          reset(savedSettings);
           setPendingLeave(false);
         }}
       />

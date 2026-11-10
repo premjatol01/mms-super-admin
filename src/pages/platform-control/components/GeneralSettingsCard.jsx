@@ -2,10 +2,19 @@ import SectionCard from './SectionCard';
 import TextField from './TextField';
 import ImageUploader from './ImageUploader';
 import SelectField from './SelectField';
-import PlatformStatusBadge from './PlatformStatusBadge';
 import { PLATFORM_STATUS_OPTIONS } from '../data/platformControlData';
 
-export default function GeneralSettingsCard({ register, errors, editing, values, setValue }) {
+export default function GeneralSettingsCard({ register, errors, editing = true, values, setValue }) {
+  const handleStatusChange = (e) => {
+    const newStatus = e.target.value;
+    setValue('platformStatus', newStatus, { shouldDirty: true });
+    if (newStatus === 'Maintenance') {
+      setValue('maintenanceEnabled', true, { shouldDirty: true });
+    } else if (newStatus === 'Active') {
+      setValue('maintenanceEnabled', false, { shouldDirty: true });
+    }
+  };
+
   return (
     <SectionCard title="General Settings" description="Basic global configuration for the platform.">
       <TextField
@@ -13,6 +22,7 @@ export default function GeneralSettingsCard({ register, errors, editing, values,
         label="Platform Name"
         editing={editing}
         error={errors.platformName?.message}
+        placeholder="e.g. Tablly"
         {...register('platformName')}
       />
 
@@ -42,23 +52,14 @@ export default function GeneralSettingsCard({ register, errors, editing, values,
         />
       </div>
 
-      {editing ? (
-        <SelectField
-          id="platformStatus"
-          label="Platform Status"
-          editing={editing}
-          value={values.platformStatus}
-          options={PLATFORM_STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
-          {...register('platformStatus')}
-        />
-      ) : (
-        <div>
-          <p className="text-xs font-medium text-secondary">Platform Status</p>
-          <div className="mt-1.5">
-            <PlatformStatusBadge status={values.platformStatus} />
-          </div>
-        </div>
-      )}
+      <SelectField
+        id="platformStatus"
+        label="Platform Status"
+        editing={editing}
+        value={values.platformStatus || 'Active'}
+        options={PLATFORM_STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+        {...register('platformStatus', { onChange: handleStatusChange })}
+      />
     </SectionCard>
   );
 }
